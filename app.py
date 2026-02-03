@@ -19,6 +19,12 @@ def criar_link_download(texto, filename):
     b64 = base64.b64encode(texto.encode()).decode()
     return f'<a href="data:text/plain;base64,{b64}" download="{filename}" style="color: #666; font-size: 12px; text-decoration: underline;">📥 Baixar Termos de Uso (PDF/Txt)</a>'
 
+def gerar_estrelas_html(nota):
+    n_cheias = int(round(nota))
+    n_vazias = 5 - n_cheias
+    estrelas = "★" * n_cheias + "☆" * n_vazias
+    return f'<span style="color: #FF8C00; font-size: 15px; letter-spacing: 1px;">{estrelas}</span> <span style="font-size: 11px; color: #666; font-weight: bold;">{nota}</span>'
+
 def inicializar_session_state():
     if 'usuario' not in st.session_state:
         st.session_state['usuario'] = None
@@ -45,12 +51,33 @@ def inicializar_session_state():
 
 inicializar_session_state()
 
-# --- 3. ESTILO VISUAL (CSS V38.0) ---
+# --- 3. ESTILO VISUAL (CSS V40.0) ---
 st.markdown("""
     <style>
     :root { color-scheme: light; }
     .stApp { background-color: #ffffff; color: #000000; }
     .block-container { padding: 1rem; padding-bottom: 5rem; }
+
+    /* --- BOTÃO WHATSAPP VERDE (NOVO) --- */
+    .btn-whatsapp {
+        display: block;
+        width: 100%;
+        background-color: #25D366;
+        color: white !important;
+        text-align: center;
+        padding: 8px;
+        border-radius: 20px; /* Bordas bem arredondadas */
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 14px;
+        margin-top: 5px;
+        border: none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .btn-whatsapp:hover {
+        background-color: #128C7E;
+        color: white !important;
+    }
 
     /* Inputs e Textos */
     .stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"] {
@@ -125,7 +152,6 @@ st.markdown("""
 def tela_termos():
     if os.path.exists("logo.png"): st.image("logo.png", use_container_width=True)
     else: st.header("⚡ Iluminar Conecta")
-    
     st.markdown("##### 📜 Termos de Uso")
     texto_termos = """1. AVISO IMPORTANTE: Este é um aplicativo de teste da Iluminar.\n2. RESPONSABILIDADE: A empresa não se responsabiliza pelos serviços contratados.\n3. DADOS: Seus dados serão usados apenas para contato dentro do app.\n4. SEGURANÇA: Não compartilhe senhas financeiras."""
     st.markdown(f"""<div class="box-termos">{texto_termos.replace(chr(10), "<br>")}</div>""", unsafe_allow_html=True)
@@ -176,8 +202,9 @@ def app_principal():
     if os.path.exists("logo.png"): st.image("logo.png", use_container_width=True) 
     else: st.title("⚡ Iluminar Conecta")
 
+    # LINK DO WHATSAPP LOJA
     insta_url = "https://www.instagram.com/iluminarsb"
-    whats_url = "https://wa.me/555534317561"
+    whats_url = "https://wa.me/5555999900048"
     icon_insta = "https://cdn-icons-png.flaticon.com/512/1384/1384031.png"
     icon_whats_vasado = "https://cdn-icons-png.flaticon.com/512/220/220236.png"
 
@@ -211,11 +238,11 @@ def app_principal():
         btn_cat(c7, "🌱", "Jardineiro", "Jardineiro")
         btn_cat(c8, "🪨", "Marmorista", "Marmorista")
 
-        st.divider()
-        st.markdown("##### 🔥 Ofertas da Semana")
-        st.markdown(html_ofertas(), unsafe_allow_html=True)
+        # Gerar HTML das Ofertas
+        ofertas_html = html_ofertas()
 
         if st.session_state['filtro'] != "":
+            # MODO FILTRO: AVISO -> LISTA -> OFERTAS EMBAIXO
             st.write("")
             st.markdown("""<div class="sticky-aviso">Faça o seu orçamento de materiais conosco através do botão do Whatsapp acima.</div>""", unsafe_allow_html=True)
             
@@ -227,6 +254,8 @@ def app_principal():
             
             for i, row in df_filtrado.iterrows():
                 medalhas = " ".join(row['Medalhas'])
+                estrelas_html = gerar_estrelas_html(row['Nota'])
+                
                 with st.container():
                     st.markdown(f"""
                     <div class="card-profissional">
@@ -234,20 +263,27 @@ def app_principal():
                             <img src="{row['Foto']}" style="border-radius: 50%; width: 55px; height: 55px; margin-right: 15px; border: 2px solid #EEE;">
                             <div>
                                 <div style="font-weight:bold; color:#333;">{row['Nome']} {medalhas}</div>
-                                <div style="color:#666; font-size:13px;">{row['Categoria']}</div>
-                                <div style="color:#FF8C00; font-size:12px;">⭐ {row['Nota']} • {row['Status']}</div>
+                                <div style="color:#666; font-size:12px; margin-bottom: 2px;">{row['Categoria']}</div>
+                                <div>{estrelas_html} <span style="color:#888; font-size:10px;">• {row['Status']}</span></div>
                             </div>
                         </div>
+                        <a href="https://wa.me/{row['Whatsapp']}" target="_blank" class="btn-whatsapp">📲 Chamar no WhatsApp</a>
                     </div>
                     """, unsafe_allow_html=True)
                     
-                    c_whats, c_avaliar = st.columns([2, 1])
-                    with c_whats:
-                        link = f"https://wa.me/{row['Whatsapp']}"
-                        st.link_button("📲 WhatsApp", link, use_container_width=True)
-                    with c_avaliar:
-                        st.button("⭐", key=f"av_{i}")
+                    # Botão de Avaliar Simples (abaixo do card se quiser, ou removemos para limpar)
+                    # Mantive apenas o botão verde grande dentro do card para destaque
+
+            st.divider()
+            st.markdown("##### 🔥 Aproveite também")
+            st.markdown(ofertas_html, unsafe_allow_html=True)
+
         else:
+            # MODO HOME: OFERTAS EM CIMA
+            st.divider()
+            st.markdown("##### 🔥 Ofertas da Semana")
+            st.markdown(ofertas_html, unsafe_allow_html=True)
+            
             st.write("")
             st.info("👆 Toque em uma categoria acima para ver os profissionais disponíveis.")
             st.divider()
@@ -275,8 +311,6 @@ def app_principal():
 
     with aba4:
         st.markdown("### 🤝 Parceiros")
-        
-        # Lógica para mostrar parceiro1.jpg e parceiro2.jpg se existirem
         p1_img = "https://via.placeholder.com/150?text=Parceiro+1"
         if os.path.exists("parceiro1.jpg"):
             b64 = get_media_base64("parceiro1.jpg")
