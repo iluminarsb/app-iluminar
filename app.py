@@ -4,6 +4,7 @@ import folium
 from streamlit_folium import st_folium
 import os
 import base64
+from datetime import date, datetime
 
 # --- 1. CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Iluminar Conecta", page_icon="💡", layout="centered")
@@ -25,6 +26,17 @@ def gerar_estrelas_html(nota):
     estrelas = "★" * n_cheias + "☆" * n_vazias
     return f'<span style="color: #FF8C00; font-size: 15px; letter-spacing: 1px;">{estrelas}</span> <span style="font-size: 11px; color: #666; font-weight: bold;">{nota}</span>'
 
+def formatar_agenda(lista_dias):
+    """Transforma lista de datas em texto bonitinho"""
+    if not lista_dias:
+        return ""
+    # Se for string (hardcoded) retorna direto, se for data formata
+    datas_str = []
+    for d in lista_dias:
+        if isinstance(d, str): datas_str.append(d)
+        else: datas_str.append(d.strftime("%d/%m"))
+    return ", ".join(datas_str)
+
 def inicializar_session_state():
     if 'usuario' not in st.session_state:
         st.session_state['usuario'] = None
@@ -45,46 +57,33 @@ def inicializar_session_state():
             'Status': ['Disponível', 'Disponível', 'Ocupado', 'Disponível', 'Disponível', 'Disponível', 'Disponível', 'Disponível'],
             'Nota': [5.0, 5.0, 4.8, 4.2, 4.9, 4.7, 5.0, 4.9],
             'Medalhas': [['🥇', '⚡'], ['🥇', '📸'], ['⚡'], [], ['🥇', '📸', '⚡'], ['🥇'], [], ['📸']],
-            'Foto': ["https://cdn-icons-png.flaticon.com/512/3135/3135715.png"] * 8
+            'Foto': ["https://cdn-icons-png.flaticon.com/512/3135/3135715.png"] * 8,
+            # NOVA COLUNA: AGENDA (DATAS OCUPADAS) - Simulação
+            'Agenda': [['10/02', '11/02'], [], ['12/02'], [], [], [], [], []] 
         }
         st.session_state['prestadores'] = pd.DataFrame(data)
 
 inicializar_session_state()
 
-# --- 3. ESTILO VISUAL (CSS V40.0) ---
+# --- 3. ESTILO VISUAL (CSS V41.0) ---
 st.markdown("""
     <style>
     :root { color-scheme: light; }
     .stApp { background-color: #ffffff; color: #000000; }
     .block-container { padding: 1rem; padding-bottom: 5rem; }
 
-    /* --- BOTÃO WHATSAPP VERDE (NOVO) --- */
+    /* --- BOTÃO WHATSAPP VERDE --- */
     .btn-whatsapp {
-        display: block;
-        width: 100%;
-        background-color: #25D366;
-        color: white !important;
-        text-align: center;
-        padding: 8px;
-        border-radius: 20px; /* Bordas bem arredondadas */
-        text-decoration: none;
-        font-weight: bold;
-        font-size: 14px;
-        margin-top: 5px;
-        border: none;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        display: block; width: 100%; background-color: #25D366; color: white !important;
+        text-align: center; padding: 8px; border-radius: 20px; text-decoration: none;
+        font-weight: bold; font-size: 14px; margin-top: 5px; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
-    .btn-whatsapp:hover {
-        background-color: #128C7E;
-        color: white !important;
-    }
+    .btn-whatsapp:hover { background-color: #128C7E; color: white !important; }
 
     /* Inputs e Textos */
     .stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"] {
-        background-color: #f8f9fa !important;
-        color: #000000 !important;
-        -webkit-text-fill-color: #000000 !important;
-        border: 1px solid #ced4da !important;
+        background-color: #f8f9fa !important; color: #000000 !important;
+        -webkit-text-fill-color: #000000 !important; border: 1px solid #ced4da !important;
     }
     label, .stMarkdown p { color: #000000 !important; }
 
@@ -95,8 +94,7 @@ st.markdown("""
     /* Botões Primários */
     button[kind="primary"] {
         background-color: #FF8C00 !important; border: 1px solid #FF8C00 !important;
-        color: white !important; border-radius: 10px !important; font-weight: bold !important;
-        box-shadow: none !important;
+        color: white !important; border-radius: 10px !important; font-weight: bold !important; box-shadow: none !important;
     }
     button[kind="primary"]:hover { background-color: #e67e00 !important; }
 
@@ -106,13 +104,10 @@ st.markdown("""
         gap: 5px !important; width: 100% !important; justify-items: center !important;
     }
     div[data-testid="column"] {
-        width: 100% !important; min-width: 0 !important;
-        display: flex !important; flex-direction: column !important;
-        align-items: center !important; padding: 0 !important;
+        width: 100% !important; min-width: 0 !important; display: flex !important; flex-direction: column !important; align-items: center !important; padding: 0 !important;
     }
     button[kind="secondary"] {
-        border-radius: 50% !important; background-color: white !important;
-        border: 2px solid #FF8C00 !important; color: black !important;
+        border-radius: 50% !important; background-color: white !important; border: 2px solid #FF8C00 !important; color: black !important;
         padding: 0 !important; margin: 0 auto !important; display: block !important;
         line-height: 1 !important; box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
         width: 68px !important; height: 68px !important; font-size: 28px !important;
@@ -202,7 +197,6 @@ def app_principal():
     if os.path.exists("logo.png"): st.image("logo.png", use_container_width=True) 
     else: st.title("⚡ Iluminar Conecta")
 
-    # LINK DO WHATSAPP LOJA
     insta_url = "https://www.instagram.com/iluminarsb"
     whats_url = "https://wa.me/5555999900048"
     icon_insta = "https://cdn-icons-png.flaticon.com/512/1384/1384031.png"
@@ -238,11 +232,9 @@ def app_principal():
         btn_cat(c7, "🌱", "Jardineiro", "Jardineiro")
         btn_cat(c8, "🪨", "Marmorista", "Marmorista")
 
-        # Gerar HTML das Ofertas
         ofertas_html = html_ofertas()
 
         if st.session_state['filtro'] != "":
-            # MODO FILTRO: AVISO -> LISTA -> OFERTAS EMBAIXO
             st.write("")
             st.markdown("""<div class="sticky-aviso">Faça o seu orçamento de materiais conosco através do botão do Whatsapp acima.</div>""", unsafe_allow_html=True)
             
@@ -256,6 +248,12 @@ def app_principal():
                 medalhas = " ".join(row['Medalhas'])
                 estrelas_html = gerar_estrelas_html(row['Nota'])
                 
+                # VISUALIZAÇÃO DA AGENDA OCUPADA
+                agenda_html = ""
+                if row['Agenda']:
+                    dias_texto = formatar_agenda(row['Agenda'])
+                    agenda_html = f'<div style="color: #D32F2F; font-size: 11px; margin-top: 5px; font-weight: bold;">📅 Agenda Cheia: {dias_texto}</div>'
+
                 with st.container():
                     st.markdown(f"""
                     <div class="card-profissional">
@@ -265,25 +263,21 @@ def app_principal():
                                 <div style="font-weight:bold; color:#333;">{row['Nome']} {medalhas}</div>
                                 <div style="color:#666; font-size:12px; margin-bottom: 2px;">{row['Categoria']}</div>
                                 <div>{estrelas_html} <span style="color:#888; font-size:10px;">• {row['Status']}</span></div>
+                                {agenda_html}
                             </div>
                         </div>
                         <a href="https://wa.me/{row['Whatsapp']}" target="_blank" class="btn-whatsapp">📲 Chamar no WhatsApp</a>
                     </div>
                     """, unsafe_allow_html=True)
-                    
-                    # Botão de Avaliar Simples (abaixo do card se quiser, ou removemos para limpar)
-                    # Mantive apenas o botão verde grande dentro do card para destaque
 
             st.divider()
             st.markdown("##### 🔥 Aproveite também")
             st.markdown(ofertas_html, unsafe_allow_html=True)
 
         else:
-            # MODO HOME: OFERTAS EM CIMA
             st.divider()
             st.markdown("##### 🔥 Ofertas da Semana")
             st.markdown(ofertas_html, unsafe_allow_html=True)
-            
             st.write("")
             st.info("👆 Toque em uma categoria acima para ver os profissionais disponíveis.")
             st.divider()
@@ -333,7 +327,33 @@ def app_principal():
         usuario = st.session_state['usuario']
         st.header(f"Olá, {usuario['nome']}")
         st.caption(f"Perfil: {usuario['tipo']}")
-        opcoes = st.selectbox("Gerenciar", ["Meus Dados", "Sair"])
+        
+        # LÓGICA DO CALENDÁRIO NO PERFIL
+        if usuario['tipo'] == 'Prestador de Serviços':
+            st.divider()
+            st.markdown("##### 📅 Gerenciar Agenda")
+            st.info("Marque abaixo os dias que você **NÃO** poderá trabalhar.")
+            
+            # Calendário Multi-Seleção
+            dias_selecionados = st.date_input(
+                "Selecionar dias indisponíveis",
+                value=[],
+                min_value=date.today(),
+                format="DD/MM/YYYY"
+            )
+            
+            # Como st.date_input retorna lista ou único, normalizamos para lista
+            if not isinstance(dias_selecionados, list):
+                # O componente date_input com range ou multi retorna tupla ou lista dependendo da versão
+                # Simplificação: Apenas mostramos que foi salvo na sessão
+                pass
+                
+            if st.button("Salvar Disponibilidade", type="primary"):
+                st.session_state['usuario']['calendario_ocupado'] = dias_selecionados
+                st.success("Agenda atualizada com sucesso!")
+            st.divider()
+
+        opcoes = st.selectbox("Gerenciar Conta", ["Meus Dados", "Sair"])
         if opcoes == "Meus Dados":
             st.text_input("WhatsApp", value=usuario.get('whats', ''))
             st.button("Salvar", type="primary")
