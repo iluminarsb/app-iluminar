@@ -36,57 +36,68 @@ def gerar_estrelas_html(nota):
     return f'<span style="color: #FF8C00; font-size: 15px; letter-spacing: 1px;">{estrelas}</span> <span style="font-size: 11px; color: #666; font-weight: bold;">{nota}</span>'
 
 def carregar_dados_planilha():
-    """Lê os dados direto do Google Sheets ou usa backup se falhar"""
-    df = pd.DataFrame() # Começa vazio
+    """Lê os dados do Google Sheets ou usa Backup Completo se falhar"""
+    df = pd.DataFrame()
     
     try:
         # Tenta ler do Google Sheets
         df = pd.read_csv(SHEET_URL)
         
-        # Tratamento de dados para evitar erros
+        # Tratamento de dados da Planilha
         if 'Agenda' not in df.columns: df['Agenda'] = ""
         df['Agenda'] = df['Agenda'].fillna("").astype(str)
-        
-        # Converte agenda de texto "10/02, 11/02" para lista real
         df['Agenda_Lista'] = df['Agenda'].apply(lambda x: [d.strip() for d in x.split(',')] if x.strip() != "" else [])
-        
-        # Garante que Nota é número
         df['Nota'] = pd.to_numeric(df['Nota'], errors='coerce').fillna(5.0)
-        
-        # Garante que Lat/Long são números
         df['Latitude'] = pd.to_numeric(df['Latitude'], errors='coerce')
         df['Longitude'] = pd.to_numeric(df['Longitude'], errors='coerce')
         
-        # Tratamento de Foto
         def corrigir_foto(f):
             if pd.isna(f) or str(f).strip().lower() == 'avatar' or str(f).strip() == '':
                 return "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
             return f 
-        
         df['Foto'] = df['Foto'].apply(corrigir_foto)
         
-        # GERAÇÃO DAS MEDALHAS (Isso é feito via código, não vem na planilha)
-        df['Medalhas'] = df['Nota'].apply(lambda x: ['🥇', '⚡'] if x >= 4.8 else [])
-        
-    except Exception as e:
-        # Se der erro no link, usa o BACKUP DE SEGURANÇA
-        # O ERRO ANTERIOR ERA AQUI: Faltava a chave 'Medalhas' neste dicionário
+    except Exception:
+        # ==========================================================
+        # 🚨 BACKUP DE EMERGÊNCIA (DADOS FICTÍCIOS NO CÓDIGO) 🚨
+        # ==========================================================
+        st.warning("Usando banco de dados offline (Backup)")
         data = {
-            'Nome': ['João Silva (Teste)', 'Maria Gesso (Teste)'],
-            'Categoria': ['Eletricista', 'Gesseiro'],
-            'Whatsapp': ['555599999999', '555588888888'],
-            'Latitude': [-28.6592, -28.6600],
-            'Longitude': [-56.0020, -56.0050],
-            'Status': ['Disponível', 'Disponível'],
-            'Nota': [5.0, 5.0],
-            'Foto': ["https://cdn-icons-png.flaticon.com/512/3135/3135715.png"] * 2,
-            'Agenda_Lista': [[], []],
-            'Medalhas': [['🥇'], ['⚡']] # <--- CORREÇÃO AQUI
+            'Nome': [
+                'Carlos Eletro', 'João da Luz', 'Roberto Fios', # Eletricistas
+                'Paulo Pedreiro', 'Marcos Construção', 'Antônio Obras', # Pedreiros
+                'José Encanador', 'Luiz Vazamentos', 'Fernando Tubos', # Encanadores
+                'Ana Clima', 'Geladao Refri', 'Frio Max', # Ar Condicionado
+                'Maria Gesso', 'Decora Gesso', 'Arte em Gesso', # Gesseiros
+                'Vidraçaria Luz', 'Pedro Vidros', 'Transparente Vidros', # Vidraceiros
+                'Carlos Jardim', 'Verde Vida', 'Jardins & Cia', # Jardineiros
+                'Roberto Mármores', 'Pedra Fina', 'Granitos Sul' # Marmoristas
+            ],
+            'Categoria': [
+                'Eletricista', 'Eletricista', 'Eletricista',
+                'Pedreiro', 'Pedreiro', 'Pedreiro',
+                'Encanador', 'Encanador', 'Encanador',
+                'Ar-Condicionado', 'Ar-Condicionado', 'Ar-Condicionado',
+                'Gesseiro', 'Gesseiro', 'Gesseiro',
+                'Vidraceiro', 'Vidraceiro', 'Vidraceiro',
+                'Jardineiro', 'Jardineiro', 'Jardineiro',
+                'Marmorista', 'Marmorista', 'Marmorista'
+            ],
+            'Whatsapp': ['555599999999'] * 24, # Whats genérico
+            'Latitude': [-28.6583, -28.6605, -28.6550, -28.6620, -28.6575, -28.6650, -28.6590, -28.6540, -28.6610, -28.6560, -28.6630, -28.6580, -28.6600, -28.6530, -28.6640, -28.6550, -28.6615, -28.6570, -28.6560, -28.6625, -28.6545, -28.6540, -28.6600, -28.6585],
+            'Longitude': [-56.0041, -56.0010, -56.0080, -56.0030, -55.9990, -56.0055, -56.0100, -56.0020, -56.0070, -56.0040, -56.0000, -56.0120, -56.0050, -55.9980, -56.0090, -56.0100, -56.0025, -56.0060, -56.0010, -56.0085, -56.0035, -56.0080, -55.9995, -56.0110],
+            'Status': ['Disponível'] * 24,
+            'Nota': [5.0, 4.8, 4.9, 5.0, 4.7, 4.5, 5.0, 4.9, 4.8, 5.0, 4.9, 4.6, 5.0, 4.8, 4.9, 4.8, 5.0, 4.7, 5.0, 4.9, 4.8, 4.9, 5.0, 4.7],
+            'Foto': ["https://cdn-icons-png.flaticon.com/512/3135/3135715.png"] * 24,
+            'Agenda_Lista': [[] for _ in range(24)]
         }
         df = pd.DataFrame(data)
     
-    # PROTEÇÃO FINAL: Se por algum milagre a coluna Medalhas sumir, cria ela vazia
-    if 'Medalhas' not in df.columns:
+    # --- GARANTIAS FINAIS ---
+    # Gera Medalhas para TODOS (Planilha ou Backup)
+    if 'Nota' in df.columns:
+        df['Medalhas'] = df['Nota'].apply(lambda x: ['🥇', '⚡'] if x >= 4.8 else [])
+    else:
         df['Medalhas'] = [[] for _ in range(len(df))]
         
     return df
@@ -96,18 +107,15 @@ def inicializar_session_state():
         st.session_state['usuario'] = None
     if 'aceitou_termos' not in st.session_state:
         st.session_state['aceitou_termos'] = False
-    
     if 'mural_posts' not in st.session_state:
         st.session_state['mural_posts'] = [
             {"id": 1, "autor": "Maria Gesso", "texto": "Sobra de material gesso. Contato inbox.", "respostas": [], "denuncias": 0}
         ]
-    
-    # CARREGA OS DADOS
     st.session_state['prestadores'] = carregar_dados_planilha()
 
 inicializar_session_state()
 
-# --- 3. ESTILO VISUAL (CSS V44.0) ---
+# --- 3. ESTILO VISUAL (CSS V45.0) ---
 st.markdown("""
     <style>
     :root { color-scheme: light; }
@@ -130,11 +138,20 @@ st.markdown("""
     .stRadio label p { color: #FF8C00 !important; font-weight: bold !important; font-size: 18px !important; }
     div[role="radiogroup"] [aria-checked="true"] > div:first-child { background-color: #FF8C00 !important; border-color: #FF8C00 !important; }
 
+    /* BOTÃO PRIMÁRIO (Laranja) */
     button[kind="primary"] {
         background-color: #FF8C00 !important; border: 1px solid #FF8C00 !important;
         color: white !important; border-radius: 10px !important; font-weight: bold !important; box-shadow: none !important;
     }
     button[kind="primary"]:hover { background-color: #e67e00 !important; }
+
+    /* BOTÃO SECUNDÁRIO (Branco com borda) - ESTILO PADRÃO DOS ÍCONES */
+    button[kind="secondary"] {
+        border-radius: 50% !important; background-color: white !important; border: 2px solid #FF8C00 !important; color: black !important;
+        padding: 0 !important; margin: 0 auto !important; display: block !important;
+        line-height: 1 !important; box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+        width: 68px !important; height: 68px !important; font-size: 28px !important;
+    }
 
     div[data-testid="stHorizontalBlock"] {
         display: grid !important; grid-template-columns: repeat(4, 1fr) !important;
@@ -143,17 +160,10 @@ st.markdown("""
     div[data-testid="column"] {
         width: 100% !important; min-width: 0 !important; display: flex !important; flex-direction: column !important; align-items: center !important; padding: 0 !important;
     }
-    button[kind="secondary"] {
-        border-radius: 50% !important; background-color: white !important; border: 2px solid #FF8C00 !important; color: black !important;
-        padding: 0 !important; margin: 0 auto !important; display: block !important;
-        line-height: 1 !important; box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
-        width: 68px !important; height: 68px !important; font-size: 28px !important;
-    }
     .rotulo-icone { display: block; width: 100%; text-align: center; font-size: 11px; font-weight: bold; color: #444 !important; margin-top: 5px; line-height: 1.2; }
 
     .social-container { display: flex; justify-content: center; gap: 40px; margin-top: 15px; margin-bottom: 15px; }
     .insta-original img { filter: grayscale(100%) brightness(0) !important; }
-    .social-icon img:hover { transform: scale(1.1); }
     .card-profissional { background-color: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.08); margin-bottom: 15px; border-left: 5px solid #FF8C00; width: 100%; }
     .sticky-aviso { position: sticky; top: 0; z-index: 1000; background-color: #FF8C00; color: white !important; text-align: center; padding: 10px; font-weight: bold; font-size: 12px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 15px; }
     
@@ -249,8 +259,12 @@ def app_principal():
 
         c1, c2, c3, c4 = st.columns(4)
         def btn_cat(col, icone, nome, chave):
+            # LÓGICA DE COR: Se estiver selecionado, botão vira Primary (Laranja), senão Secondary (Branco)
+            tipo_botao = "primary" if st.session_state['filtro'] == chave else "secondary"
             with col:
-                if st.button(icone, key=f"btn_{chave}", type="secondary"): st.session_state['filtro'] = chave
+                if st.button(icone, key=f"btn_{chave}", type=tipo_botao): 
+                    st.session_state['filtro'] = chave
+                    st.rerun()
                 st.markdown(f'<div class="rotulo-icone">{nome}</div>', unsafe_allow_html=True)
 
         btn_cat(c1, "⚡", "Eletricista", "Eletricista")
@@ -270,10 +284,8 @@ def app_principal():
             st.write("")
             st.markdown("""<div class="sticky-aviso">Faça o seu orçamento de materiais conosco através do botão do Whatsapp acima.</div>""", unsafe_allow_html=True)
             
-            # FILTRA DADOS DA PLANILHA
             df = st.session_state['prestadores']
             filtro = st.session_state['filtro']
-            # Garante que filtra ignorando maiusculas/minusculas e trata nulos
             if 'Categoria' in df.columns:
                 df_filtrado = df[df['Categoria'].astype(str).str.contains(filtro, case=False, na=False)]
             else:
@@ -282,10 +294,8 @@ def app_principal():
             st.write(f"Encontrados: **{len(df_filtrado)} profissionais**")
             
             for i, row in df_filtrado.iterrows():
-                # PROTEÇÃO: Garante que Medalhas existe, se não, usa lista vazia
                 lista_medalhas = row['Medalhas'] if 'Medalhas' in row else []
                 if not isinstance(lista_medalhas, list): lista_medalhas = []
-                
                 medalhas = " ".join(lista_medalhas)
                 estrelas_html = gerar_estrelas_html(row['Nota'])
                 
@@ -295,6 +305,7 @@ def app_principal():
                     agenda_html = f'<div style="color: #D32F2F; font-size: 11px; margin-top: 5px; font-weight: bold;">📅 Ocupado em: {dias_texto}</div>'
 
                 with st.container():
+                    # HTML CORRIGIDO AQUI (Sem quebras erradas)
                     st.markdown(f"""
                     <div class="card-profissional">
                         <div style="display: flex; align-items: center;">
@@ -329,7 +340,6 @@ def app_principal():
         st.info("📍 Prestadores na região")
         m = folium.Map(location=[-28.6592, -56.0020], zoom_start=14)
         df_mapa = st.session_state['prestadores']
-        # Proteção para mapa: só mostra se lat/long forem válidas
         if 'Latitude' in df_mapa.columns and 'Longitude' in df_mapa.columns:
             df_mapa = df_mapa.dropna(subset=['Latitude', 'Longitude'])
             for i, row in df_mapa.iterrows():
@@ -352,7 +362,6 @@ def app_principal():
         if os.path.exists("parceiro1.jpg"):
             b64 = get_media_base64("parceiro1.jpg")
             p1_img = f"data:image/jpeg;base64,{b64}"
-            
         p2_img = "https://via.placeholder.com/150?text=Parceiro+2"
         if os.path.exists("parceiro2.jpg"):
             b64 = get_media_base64("parceiro2.jpg")
