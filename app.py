@@ -114,7 +114,7 @@ def inicializar_session_state():
 
 inicializar_session_state()
 
-# --- 3. ESTILO VISUAL (CSS V46.0 - CORREÇÃO DE HTML E ÍCONES) ---
+# --- 3. ESTILO VISUAL (CSS V47.0 - CORREÇÃO CRÍTICA HTML) ---
 st.markdown("""
     <style>
     :root { color-scheme: light; }
@@ -139,15 +139,17 @@ st.markdown("""
     .stRadio label p { color: #FF8C00 !important; font-weight: bold !important; font-size: 18px !important; }
     div[role="radiogroup"] [aria-checked="true"] > div:first-child { background-color: #FF8C00 !important; border-color: #FF8C00 !important; }
 
-    /* BOTÃO PRIMÁRIO (USADO NO ENTRAR/SALVAR) */
+    /* BOTÃO PRIMÁRIO (Laranja Forte - Usado no Selecionado) */
     button[kind="primary"] {
         background-color: #FF8C00 !important; border: 1px solid #FF8C00 !important;
-        color: white !important; border-radius: 10px !important; font-weight: bold !important; box-shadow: none !important;
+        color: white !important; border-radius: 50% !important; /* REDONDO */
+        font-weight: bold !important; box-shadow: none !important;
+        width: 68px !important; height: 68px !important; padding: 0 !important;
+        font-size: 28px !important; line-height: 1 !important;
     }
     button[kind="primary"]:hover { background-color: #e67e00 !important; }
 
-    /* --- ÍCONES DE CATEGORIA --- */
-    /* Botão normal (não selecionado) = Branco com borda laranja */
+    /* BOTÃO SECUNDÁRIO (Branco - Usado no Não Selecionado) */
     button[kind="secondary"] {
         border-radius: 50% !important; 
         background-color: white !important; 
@@ -157,9 +159,6 @@ st.markdown("""
         line-height: 1 !important; box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
         width: 68px !important; height: 68px !important; font-size: 28px !important;
     }
-    
-    /* ESTILO PARA BOTÃO ATIVO (LARANJA CLARO) - Injetado via Python */
-    /* Não mexemos aqui no CSS global, a lógica está no Python */
 
     div[data-testid="stHorizontalBlock"] {
         display: grid !important; grid-template-columns: repeat(4, 1fr) !important;
@@ -205,7 +204,8 @@ def tela_termos():
     aceite = st.checkbox("Li os termos de uso, concordo e aceito.")
     if aceite:
         st.write("")
-        if st.button("AVANÇAR", type="primary"):
+        # Botão normal retangular para avançar
+        if st.button("AVANÇAR", type="secondary"):
             st.session_state['aceitou_termos'] = True
             st.rerun()
 
@@ -216,7 +216,8 @@ def tela_cadastro_simples():
     st.markdown("**Eu sou:**")
     tipo = st.radio("Selecione:", ["Cliente", "Prestador de Serviços"], label_visibility="collapsed")
     st.write("")
-    if st.button("ENTRAR NO APP", type="primary"):
+    # Botão normal retangular para entrar
+    if st.button("ENTRAR NO APP", type="secondary"):
         st.session_state['usuario'] = {
             "nome": nome if nome else "Visitante",
             "tipo": tipo,
@@ -267,29 +268,13 @@ def app_principal():
 
         c1, c2, c3, c4 = st.columns(4)
         def btn_cat(col, icone, nome, chave):
-            # LÓGICA DE SELEÇÃO:
-            # Se selecionado: Botão continua 'secondary', mas aplicamos um CSS Inline Hack para mudar a cor
-            is_selected = (st.session_state['filtro'] == chave)
-            
-            # Cor: Se selecionado = Laranja Claro (#FFDAB9), Se não = Branco
-            bg_color = "#FFDAB9" if is_selected else "white"
-            
-            # Hack de estilo para mudar a cor do botão específico
-            # O Streamlit não deixa mudar cor de botão Secondary fácil, então mantemos ele Branco com borda
-            # Mas se selecionado, usamos a lógica do 'Primary' (mas você pediu laranja fraco, o Primary é forte)
-            
-            # SOLUÇÃO: Vamos manter secondary, mas se selecionado, indicamos visualmente com o texto abaixo
+            # Se selecionado = Primary (Laranja Redondo), Se não = Secondary (Branco Redondo)
+            tipo_botao = "primary" if st.session_state['filtro'] == chave else "secondary"
             with col:
-                # Se estiver selecionado, usamos um truque visual
-                if st.button(icone, key=f"btn_{chave}", type="secondary"): 
+                if st.button(icone, key=f"btn_{chave}", type=tipo_botao): 
                     st.session_state['filtro'] = chave
                     st.rerun()
-                
-                # Se selecionado, o texto fica Laranja e com um ● embaixo
-                if is_selected:
-                    st.markdown(f'<div class="rotulo-icone" style="color:#FF8C00 !important;">{nome}<br>●</div>', unsafe_allow_html=True)
-                else:
-                    st.markdown(f'<div class="rotulo-icone">{nome}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="rotulo-icone">{nome}</div>', unsafe_allow_html=True)
 
         btn_cat(c1, "⚡", "Eletricista", "Eletricista")
         btn_cat(c2, "🏗️", "Pedreiro", "Pedreiro")
@@ -328,22 +313,23 @@ def app_principal():
                     dias_texto = ", ".join(row['Agenda_Lista'])
                     agenda_html = f'<div style="color: #D32F2F; font-size: 11px; margin-top: 5px; font-weight: bold;">📅 Ocupado em: {dias_texto}</div>'
 
-                # --- CORREÇÃO DO CARD HTML ---
+                # --- CORREÇÃO DO CARD HTML (SEM IDENTAÇÃO PARA NÃO QUEBRAR) ---
                 with st.container():
-                    st.markdown(f"""
-                    <div class="card-profissional">
-                        <div style="display: flex; align-items: center;">
-                            <img src="{row['Foto']}" style="border-radius: 50%; width: 55px; height: 55px; margin-right: 15px; border: 2px solid #EEE; object-fit: cover;">
-                            <div>
-                                <div style="font-weight:bold; color:#333;">{row['Nome']} {medalhas}</div>
-                                <div style="color:#666; font-size:12px; margin-bottom: 2px;">{row['Categoria']}</div>
-                                <div>{estrelas_html} <span style="color:#888; font-size:10px;">• {row['Status']}</span></div>
-                                {agenda_html}
-                            </div>
-                        </div>
-                        <a href="https://wa.me/{row['Whatsapp']}" target="_blank" class="btn-whatsapp">📲 Chamar no WhatsApp</a>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    card_html = f"""
+<div class="card-profissional">
+    <div style="display: flex; align-items: center;">
+        <img src="{row['Foto']}" style="border-radius: 50%; width: 55px; height: 55px; margin-right: 15px; border: 2px solid #EEE; object-fit: cover;">
+        <div>
+            <div style="font-weight:bold; color:#333;">{row['Nome']} {medalhas}</div>
+            <div style="color:#666; font-size:12px; margin-bottom: 2px;">{row['Categoria']}</div>
+            <div>{estrelas_html} <span style="color:#888; font-size:10px;">• {row['Status']}</span></div>
+            {agenda_html}
+        </div>
+    </div>
+    <a href="https://wa.me/{row['Whatsapp']}" target="_blank" class="btn-whatsapp">📲 Chamar no WhatsApp</a>
+</div>
+"""
+                    st.markdown(card_html, unsafe_allow_html=True)
 
             st.divider()
             st.markdown("##### 🔥 Aproveite também")
@@ -374,7 +360,7 @@ def app_principal():
         st.markdown("### 💬 Mural")
         with st.form("novo_post"):
             texto_post = st.text_area("O que você precisa?", max_chars=300)
-            if st.form_submit_button("Publicar", type="primary"):
+            if st.form_submit_button("Publicar", type="secondary"):
                 st.success("Publicado!")
         st.divider()
         for post in st.session_state['mural_posts']:
@@ -406,7 +392,7 @@ def app_principal():
         opcoes = st.selectbox("Gerenciar", ["Meus Dados", "Sair"])
         if opcoes == "Meus Dados":
             st.text_input("WhatsApp", value=usuario.get('whats', ''))
-            st.button("Salvar", type="primary")
+            st.button("Salvar", type="secondary")
         elif opcoes == "Sair":
             if st.button("Sair da Conta"):
                 st.session_state['usuario'] = None
