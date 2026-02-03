@@ -10,7 +10,7 @@ from datetime import date
 st.set_page_config(page_title="Iluminar Conecta", page_icon="💡", layout="centered")
 
 # ==============================================================================
-# 👇👇👇 ÁREA DE CONFIGURAÇÃO DA PLANILHA (JÁ CONFIGURADO) 👇👇👇
+# 👇👇👇 LINK DA PLANILHA 👇👇👇
 SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQebfRxbrTKHczD0zyzThfru67dqKpCbREHoDjZUPAQYY9OQdzEmxCewcxAdtuLc4Upef5UYdMRE2OD/pub?output=csv"
 # ==============================================================================
 
@@ -37,6 +37,8 @@ def gerar_estrelas_html(nota):
 
 def carregar_dados_planilha():
     """Lê os dados direto do Google Sheets ou usa backup se falhar"""
+    df = pd.DataFrame() # Começa vazio
+    
     try:
         # Tenta ler do Google Sheets
         df = pd.read_csv(SHEET_URL)
@@ -59,18 +61,16 @@ def carregar_dados_planilha():
         def corrigir_foto(f):
             if pd.isna(f) or str(f).strip().lower() == 'avatar' or str(f).strip() == '':
                 return "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
-            return f # Retorna o link ou nome do arquivo
+            return f 
         
         df['Foto'] = df['Foto'].apply(corrigir_foto)
         
-        # Adiciona Medalhas Fictícias baseadas na nota (para manter visual)
+        # GERAÇÃO DAS MEDALHAS (Isso é feito via código, não vem na planilha)
         df['Medalhas'] = df['Nota'].apply(lambda x: ['🥇', '⚡'] if x >= 4.8 else [])
         
-        return df
-        
     except Exception as e:
-        # Se o link estiver vazio ou der erro, usa dados de exemplo (Backup)
-        st.error(f"Erro ao carregar planilha: {e}. Usando dados de teste.")
+        # Se der erro no link, usa o BACKUP DE SEGURANÇA
+        # O ERRO ANTERIOR ERA AQUI: Faltava a chave 'Medalhas' neste dicionário
         data = {
             'Nome': ['João Silva (Teste)', 'Maria Gesso (Teste)'],
             'Categoria': ['Eletricista', 'Gesseiro'],
@@ -79,10 +79,17 @@ def carregar_dados_planilha():
             'Longitude': [-56.0020, -56.0050],
             'Status': ['Disponível', 'Disponível'],
             'Nota': [5.0, 5.0],
-            'Foto': ["avatar", "avatar"],
-            'Agenda_Lista': [[], []]
+            'Foto': ["https://cdn-icons-png.flaticon.com/512/3135/3135715.png"] * 2,
+            'Agenda_Lista': [[], []],
+            'Medalhas': [['🥇'], ['⚡']] # <--- CORREÇÃO AQUI
         }
-        return pd.DataFrame(data)
+        df = pd.DataFrame(data)
+    
+    # PROTEÇÃO FINAL: Se por algum milagre a coluna Medalhas sumir, cria ela vazia
+    if 'Medalhas' not in df.columns:
+        df['Medalhas'] = [[] for _ in range(len(df))]
+        
+    return df
 
 def inicializar_session_state():
     if 'usuario' not in st.session_state:
@@ -90,19 +97,17 @@ def inicializar_session_state():
     if 'aceitou_termos' not in st.session_state:
         st.session_state['aceitou_termos'] = False
     
-    # Mural (Ainda local por enquanto)
     if 'mural_posts' not in st.session_state:
         st.session_state['mural_posts'] = [
             {"id": 1, "autor": "Maria Gesso", "texto": "Sobra de material gesso. Contato inbox.", "respostas": [], "denuncias": 0}
         ]
     
-    # CARREGA OS DADOS DA PLANILHA
-    # Recarrega sempre que atualizar a pagina para pegar dados novos
+    # CARREGA OS DADOS
     st.session_state['prestadores'] = carregar_dados_planilha()
 
 inicializar_session_state()
 
-# --- 3. ESTILO VISUAL (CSS V42.0) ---
+# --- 3. ESTILO VISUAL (CSS V44.0) ---
 st.markdown("""
     <style>
     :root { color-scheme: light; }
@@ -272,12 +277,16 @@ def app_principal():
             if 'Categoria' in df.columns:
                 df_filtrado = df[df['Categoria'].astype(str).str.contains(filtro, case=False, na=False)]
             else:
-                df_filtrado = pd.DataFrame() # Retorna vazio se não tiver coluna Categoria
+                df_filtrado = pd.DataFrame() 
 
             st.write(f"Encontrados: **{len(df_filtrado)} profissionais**")
             
             for i, row in df_filtrado.iterrows():
-                medalhas = " ".join(row['Medalhas'])
+                # PROTEÇÃO: Garante que Medalhas existe, se não, usa lista vazia
+                lista_medalhas = row['Medalhas'] if 'Medalhas' in row else []
+                if not isinstance(lista_medalhas, list): lista_medalhas = []
+                
+                medalhas = " ".join(lista_medalhas)
                 estrelas_html = gerar_estrelas_html(row['Nota'])
                 
                 agenda_html = ""
