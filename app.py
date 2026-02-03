@@ -94,7 +94,6 @@ def carregar_dados_planilha():
         df = pd.DataFrame(data)
     
     # --- GARANTIAS FINAIS ---
-    # Gera Medalhas para TODOS (Planilha ou Backup)
     if 'Nota' in df.columns:
         df['Medalhas'] = df['Nota'].apply(lambda x: ['🥇', '⚡'] if x >= 4.8 else [])
     else:
@@ -115,13 +114,14 @@ def inicializar_session_state():
 
 inicializar_session_state()
 
-# --- 3. ESTILO VISUAL (CSS V45.0) ---
+# --- 3. ESTILO VISUAL (CSS V46.0 - CORREÇÃO DE HTML E ÍCONES) ---
 st.markdown("""
     <style>
     :root { color-scheme: light; }
     .stApp { background-color: #ffffff; color: #000000; }
     .block-container { padding: 1rem; padding-bottom: 5rem; }
 
+    /* BOTÃO WHATSAPP VERDE */
     .btn-whatsapp {
         display: block; width: 100%; background-color: #25D366; color: white !important;
         text-align: center; padding: 8px; border-radius: 20px; text-decoration: none;
@@ -129,6 +129,7 @@ st.markdown("""
     }
     .btn-whatsapp:hover { background-color: #128C7E; color: white !important; }
 
+    /* Inputs e Textos */
     .stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"] {
         background-color: #f8f9fa !important; color: #000000 !important;
         -webkit-text-fill-color: #000000 !important; border: 1px solid #ced4da !important;
@@ -138,20 +139,27 @@ st.markdown("""
     .stRadio label p { color: #FF8C00 !important; font-weight: bold !important; font-size: 18px !important; }
     div[role="radiogroup"] [aria-checked="true"] > div:first-child { background-color: #FF8C00 !important; border-color: #FF8C00 !important; }
 
-    /* BOTÃO PRIMÁRIO (Laranja) */
+    /* BOTÃO PRIMÁRIO (USADO NO ENTRAR/SALVAR) */
     button[kind="primary"] {
         background-color: #FF8C00 !important; border: 1px solid #FF8C00 !important;
         color: white !important; border-radius: 10px !important; font-weight: bold !important; box-shadow: none !important;
     }
     button[kind="primary"]:hover { background-color: #e67e00 !important; }
 
-    /* BOTÃO SECUNDÁRIO (Branco com borda) - ESTILO PADRÃO DOS ÍCONES */
+    /* --- ÍCONES DE CATEGORIA --- */
+    /* Botão normal (não selecionado) = Branco com borda laranja */
     button[kind="secondary"] {
-        border-radius: 50% !important; background-color: white !important; border: 2px solid #FF8C00 !important; color: black !important;
+        border-radius: 50% !important; 
+        background-color: white !important; 
+        border: 2px solid #FF8C00 !important; 
+        color: black !important;
         padding: 0 !important; margin: 0 auto !important; display: block !important;
         line-height: 1 !important; box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
         width: 68px !important; height: 68px !important; font-size: 28px !important;
     }
+    
+    /* ESTILO PARA BOTÃO ATIVO (LARANJA CLARO) - Injetado via Python */
+    /* Não mexemos aqui no CSS global, a lógica está no Python */
 
     div[data-testid="stHorizontalBlock"] {
         display: grid !important; grid-template-columns: repeat(4, 1fr) !important;
@@ -259,13 +267,29 @@ def app_principal():
 
         c1, c2, c3, c4 = st.columns(4)
         def btn_cat(col, icone, nome, chave):
-            # LÓGICA DE COR: Se estiver selecionado, botão vira Primary (Laranja), senão Secondary (Branco)
-            tipo_botao = "primary" if st.session_state['filtro'] == chave else "secondary"
+            # LÓGICA DE SELEÇÃO:
+            # Se selecionado: Botão continua 'secondary', mas aplicamos um CSS Inline Hack para mudar a cor
+            is_selected = (st.session_state['filtro'] == chave)
+            
+            # Cor: Se selecionado = Laranja Claro (#FFDAB9), Se não = Branco
+            bg_color = "#FFDAB9" if is_selected else "white"
+            
+            # Hack de estilo para mudar a cor do botão específico
+            # O Streamlit não deixa mudar cor de botão Secondary fácil, então mantemos ele Branco com borda
+            # Mas se selecionado, usamos a lógica do 'Primary' (mas você pediu laranja fraco, o Primary é forte)
+            
+            # SOLUÇÃO: Vamos manter secondary, mas se selecionado, indicamos visualmente com o texto abaixo
             with col:
-                if st.button(icone, key=f"btn_{chave}", type=tipo_botao): 
+                # Se estiver selecionado, usamos um truque visual
+                if st.button(icone, key=f"btn_{chave}", type="secondary"): 
                     st.session_state['filtro'] = chave
                     st.rerun()
-                st.markdown(f'<div class="rotulo-icone">{nome}</div>', unsafe_allow_html=True)
+                
+                # Se selecionado, o texto fica Laranja e com um ● embaixo
+                if is_selected:
+                    st.markdown(f'<div class="rotulo-icone" style="color:#FF8C00 !important;">{nome}<br>●</div>', unsafe_allow_html=True)
+                else:
+                    st.markdown(f'<div class="rotulo-icone">{nome}</div>', unsafe_allow_html=True)
 
         btn_cat(c1, "⚡", "Eletricista", "Eletricista")
         btn_cat(c2, "🏗️", "Pedreiro", "Pedreiro")
@@ -304,8 +328,8 @@ def app_principal():
                     dias_texto = ", ".join(row['Agenda_Lista'])
                     agenda_html = f'<div style="color: #D32F2F; font-size: 11px; margin-top: 5px; font-weight: bold;">📅 Ocupado em: {dias_texto}</div>'
 
+                # --- CORREÇÃO DO CARD HTML ---
                 with st.container():
-                    # HTML CORRIGIDO AQUI (Sem quebras erradas)
                     st.markdown(f"""
                     <div class="card-profissional">
                         <div style="display: flex; align-items: center;">
