@@ -114,7 +114,7 @@ def inicializar_session_state():
 
 inicializar_session_state()
 
-# --- 3. ESTILO VISUAL (CSS V47.0 - CORREÇÃO CRÍTICA HTML) ---
+# --- 3. ESTILO VISUAL (CSS V48.0 - ÍCONES RETANGULARES) ---
 st.markdown("""
     <style>
     :root { color-scheme: light; }
@@ -139,25 +139,28 @@ st.markdown("""
     .stRadio label p { color: #FF8C00 !important; font-weight: bold !important; font-size: 18px !important; }
     div[role="radiogroup"] [aria-checked="true"] > div:first-child { background-color: #FF8C00 !important; border-color: #FF8C00 !important; }
 
-    /* BOTÃO PRIMÁRIO (Laranja Forte - Usado no Selecionado) */
+    /* --- ÍCONES DE CATEGORIA (RETANGULARES) --- */
+    
+    /* Botão SELECIONADO (Laranja Preenchido) */
     button[kind="primary"] {
         background-color: #FF8C00 !important; border: 1px solid #FF8C00 !important;
-        color: white !important; border-radius: 50% !important; /* REDONDO */
+        color: white !important; 
+        border-radius: 15px !important; /* RETANGULAR ARREDONDADO */
         font-weight: bold !important; box-shadow: none !important;
-        width: 68px !important; height: 68px !important; padding: 0 !important;
+        width: auto !important; height: auto !important; padding: 10px 15px !important;
         font-size: 28px !important; line-height: 1 !important;
     }
     button[kind="primary"]:hover { background-color: #e67e00 !important; }
 
-    /* BOTÃO SECUNDÁRIO (Branco - Usado no Não Selecionado) */
+    /* Botão NÃO SELECIONADO (Branco com Borda) */
     button[kind="secondary"] {
-        border-radius: 50% !important; 
+        border-radius: 15px !important; /* RETANGULAR ARREDONDADO */
         background-color: white !important; 
         border: 2px solid #FF8C00 !important; 
         color: black !important;
-        padding: 0 !important; margin: 0 auto !important; display: block !important;
+        padding: 10px 15px !important; margin: 0 auto !important; display: block !important;
         line-height: 1 !important; box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
-        width: 68px !important; height: 68px !important; font-size: 28px !important;
+        width: auto !important; height: auto !important; font-size: 28px !important;
     }
 
     div[data-testid="stHorizontalBlock"] {
@@ -313,23 +316,21 @@ def app_principal():
                     dias_texto = ", ".join(row['Agenda_Lista'])
                     agenda_html = f'<div style="color: #D32F2F; font-size: 11px; margin-top: 5px; font-weight: bold;">📅 Ocupado em: {dias_texto}</div>'
 
-                # --- CORREÇÃO DO CARD HTML (SEM IDENTAÇÃO PARA NÃO QUEBRAR) ---
-                with st.container():
-                    card_html = f"""
-<div class="card-profissional">
-    <div style="display: flex; align-items: center;">
-        <img src="{row['Foto']}" style="border-radius: 50%; width: 55px; height: 55px; margin-right: 15px; border: 2px solid #EEE; object-fit: cover;">
-        <div>
-            <div style="font-weight:bold; color:#333;">{row['Nome']} {medalhas}</div>
-            <div style="color:#666; font-size:12px; margin-bottom: 2px;">{row['Categoria']}</div>
-            <div>{estrelas_html} <span style="color:#888; font-size:10px;">• {row['Status']}</span></div>
-            {agenda_html}
-        </div>
-    </div>
-    <a href="https://wa.me/{row['Whatsapp']}" target="_blank" class="btn-whatsapp">📲 Chamar no WhatsApp</a>
-</div>
-"""
-                    st.markdown(card_html, unsafe_allow_html=True)
+                # --- CORREÇÃO DEFINITIVA DO CARD HTML (USANDO JOIN PARA EVITAR ESPAÇOS) ---
+                card_html = "".join([
+                    f'<div class="card-profissional">',
+                    f'<div style="display: flex; align-items: center;">',
+                    f'<img src="{row["Foto"]}" style="border-radius: 50%; width: 55px; height: 55px; margin-right: 15px; border: 2px solid #EEE; object-fit: cover;">',
+                    f'<div>',
+                    f'<div style="font-weight:bold; color:#333;">{row["Nome"]} {medalhas}</div>',
+                    f'<div style="color:#666; font-size:12px; margin-bottom: 2px;">{row["Categoria"]}</div>',
+                    f'<div>{estrelas_html} <span style="color:#888; font-size:10px;">• {row["Status"]}</span></div>',
+                    f'{agenda_html}',
+                    f'</div></div>',
+                    f'<a href="https://wa.me/{row["Whatsapp"]}" target="_blank" class="btn-whatsapp">📲 Chamar no WhatsApp</a>',
+                    f'</div>'
+                ])
+                st.markdown(card_html, unsafe_allow_html=True)
 
             st.divider()
             st.markdown("##### 🔥 Aproveite também")
