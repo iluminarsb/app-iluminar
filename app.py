@@ -4,10 +4,15 @@ import folium
 from streamlit_folium import st_folium
 import os
 import base64
-from datetime import date, datetime
+from datetime import date
 
-# --- 1. CONFIGURAÇÃO DA PÁGINA ---
+# --- 1. CONFIGURAÇÃO ---
 st.set_page_config(page_title="Iluminar Conecta", page_icon="💡", layout="centered")
+
+# ==============================================================================
+# 👇👇👇 ÁREA DE CONFIGURAÇÃO DA PLANILHA (JÁ CONFIGURADO) 👇👇👇
+SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQebfRxbrTKHczD0zyzThfru67dqKpCbREHoDjZUPAQYY9OQdzEmxCewcxAdtuLc4Upef5UYdMRE2OD/pub?output=csv"
+# ==============================================================================
 
 # --- 2. FUNÇÕES AUXILIARES ---
 def get_media_base64(file_path):
@@ -21,21 +26,63 @@ def criar_link_download(texto, filename):
     return f'<a href="data:text/plain;base64,{b64}" download="{filename}" style="color: #666; font-size: 12px; text-decoration: underline;">📥 Baixar Termos de Uso (PDF/Txt)</a>'
 
 def gerar_estrelas_html(nota):
-    n_cheias = int(round(nota))
+    try:
+        nota_float = float(nota)
+    except:
+        nota_float = 5.0
+    n_cheias = int(round(nota_float))
     n_vazias = 5 - n_cheias
     estrelas = "★" * n_cheias + "☆" * n_vazias
     return f'<span style="color: #FF8C00; font-size: 15px; letter-spacing: 1px;">{estrelas}</span> <span style="font-size: 11px; color: #666; font-weight: bold;">{nota}</span>'
 
-def formatar_agenda(lista_dias):
-    """Transforma lista de datas em texto bonitinho"""
-    if not lista_dias:
-        return ""
-    # Se for string (hardcoded) retorna direto, se for data formata
-    datas_str = []
-    for d in lista_dias:
-        if isinstance(d, str): datas_str.append(d)
-        else: datas_str.append(d.strftime("%d/%m"))
-    return ", ".join(datas_str)
+def carregar_dados_planilha():
+    """Lê os dados direto do Google Sheets ou usa backup se falhar"""
+    try:
+        # Tenta ler do Google Sheets
+        df = pd.read_csv(SHEET_URL)
+        
+        # Tratamento de dados para evitar erros
+        if 'Agenda' not in df.columns: df['Agenda'] = ""
+        df['Agenda'] = df['Agenda'].fillna("").astype(str)
+        
+        # Converte agenda de texto "10/02, 11/02" para lista real
+        df['Agenda_Lista'] = df['Agenda'].apply(lambda x: [d.strip() for d in x.split(',')] if x.strip() != "" else [])
+        
+        # Garante que Nota é número
+        df['Nota'] = pd.to_numeric(df['Nota'], errors='coerce').fillna(5.0)
+        
+        # Garante que Lat/Long são números
+        df['Latitude'] = pd.to_numeric(df['Latitude'], errors='coerce')
+        df['Longitude'] = pd.to_numeric(df['Longitude'], errors='coerce')
+        
+        # Tratamento de Foto
+        def corrigir_foto(f):
+            if pd.isna(f) or str(f).strip().lower() == 'avatar' or str(f).strip() == '':
+                return "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+            return f # Retorna o link ou nome do arquivo
+        
+        df['Foto'] = df['Foto'].apply(corrigir_foto)
+        
+        # Adiciona Medalhas Fictícias baseadas na nota (para manter visual)
+        df['Medalhas'] = df['Nota'].apply(lambda x: ['🥇', '⚡'] if x >= 4.8 else [])
+        
+        return df
+        
+    except Exception as e:
+        # Se o link estiver vazio ou der erro, usa dados de exemplo (Backup)
+        st.error(f"Erro ao carregar planilha: {e}. Usando dados de teste.")
+        data = {
+            'Nome': ['João Silva (Teste)', 'Maria Gesso (Teste)'],
+            'Categoria': ['Eletricista', 'Gesseiro'],
+            'Whatsapp': ['555599999999', '555588888888'],
+            'Latitude': [-28.6592, -28.6600],
+            'Longitude': [-56.0020, -56.0050],
+            'Status': ['Disponível', 'Disponível'],
+            'Nota': [5.0, 5.0],
+            'Foto': ["avatar", "avatar"],
+            'Agenda_Lista': [[], []]
+        }
+        return pd.DataFrame(data)
 
 def inicializar_session_state():
     if 'usuario' not in st.session_state:
@@ -43,36 +90,25 @@ def inicializar_session_state():
     if 'aceitou_termos' not in st.session_state:
         st.session_state['aceitou_termos'] = False
     
+    # Mural (Ainda local por enquanto)
     if 'mural_posts' not in st.session_state:
         st.session_state['mural_posts'] = [
             {"id": 1, "autor": "Maria Gesso", "texto": "Sobra de material gesso. Contato inbox.", "respostas": [], "denuncias": 0}
         ]
-    if 'prestadores' not in st.session_state:
-        data = {
-            'Nome': ['João Silva', 'Maria Gesso', 'Vidraçaria Luz', 'Pedro Fio', 'Ana Climatização', 'José Encanador', 'Carlos Jardim', 'Roberto Mármores'],
-            'Categoria': ['Eletricista', 'Gesseiro', 'Vidraceiro', 'Eletricista', 'Ar-Condicionado', 'Encanador', 'Jardineiro', 'Marmorista'],
-            'Whatsapp': ['555599999999', '555588888888', '555577777777', '555566666666', '555544444444', '555533333333', '555522222222', '555511111111'],
-            'Latitude': [-28.6592, -28.6600, -28.6550, -28.6580, -28.6570, -28.6610, -28.6560, -28.6540],
-            'Longitude': [-56.0020, -56.0050, -56.0100, -56.0030, -56.0040, -56.0060, -56.0010, -56.0080],
-            'Status': ['Disponível', 'Disponível', 'Ocupado', 'Disponível', 'Disponível', 'Disponível', 'Disponível', 'Disponível'],
-            'Nota': [5.0, 5.0, 4.8, 4.2, 4.9, 4.7, 5.0, 4.9],
-            'Medalhas': [['🥇', '⚡'], ['🥇', '📸'], ['⚡'], [], ['🥇', '📸', '⚡'], ['🥇'], [], ['📸']],
-            'Foto': ["https://cdn-icons-png.flaticon.com/512/3135/3135715.png"] * 8,
-            # NOVA COLUNA: AGENDA (DATAS OCUPADAS) - Simulação
-            'Agenda': [['10/02', '11/02'], [], ['12/02'], [], [], [], [], []] 
-        }
-        st.session_state['prestadores'] = pd.DataFrame(data)
+    
+    # CARREGA OS DADOS DA PLANILHA
+    # Recarrega sempre que atualizar a pagina para pegar dados novos
+    st.session_state['prestadores'] = carregar_dados_planilha()
 
 inicializar_session_state()
 
-# --- 3. ESTILO VISUAL (CSS V41.0) ---
+# --- 3. ESTILO VISUAL (CSS V42.0) ---
 st.markdown("""
     <style>
     :root { color-scheme: light; }
     .stApp { background-color: #ffffff; color: #000000; }
     .block-container { padding: 1rem; padding-bottom: 5rem; }
 
-    /* --- BOTÃO WHATSAPP VERDE --- */
     .btn-whatsapp {
         display: block; width: 100%; background-color: #25D366; color: white !important;
         text-align: center; padding: 8px; border-radius: 20px; text-decoration: none;
@@ -80,25 +116,21 @@ st.markdown("""
     }
     .btn-whatsapp:hover { background-color: #128C7E; color: white !important; }
 
-    /* Inputs e Textos */
     .stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"] {
         background-color: #f8f9fa !important; color: #000000 !important;
         -webkit-text-fill-color: #000000 !important; border: 1px solid #ced4da !important;
     }
     label, .stMarkdown p { color: #000000 !important; }
-
-    /* Radio Buttons */
+    
     .stRadio label p { color: #FF8C00 !important; font-weight: bold !important; font-size: 18px !important; }
     div[role="radiogroup"] [aria-checked="true"] > div:first-child { background-color: #FF8C00 !important; border-color: #FF8C00 !important; }
 
-    /* Botões Primários */
     button[kind="primary"] {
         background-color: #FF8C00 !important; border: 1px solid #FF8C00 !important;
         color: white !important; border-radius: 10px !important; font-weight: bold !important; box-shadow: none !important;
     }
     button[kind="primary"]:hover { background-color: #e67e00 !important; }
 
-    /* Grid e Ícones */
     div[data-testid="stHorizontalBlock"] {
         display: grid !important; grid-template-columns: repeat(4, 1fr) !important;
         gap: 5px !important; width: 100% !important; justify-items: center !important;
@@ -114,14 +146,12 @@ st.markdown("""
     }
     .rotulo-icone { display: block; width: 100%; text-align: center; font-size: 11px; font-weight: bold; color: #444 !important; margin-top: 5px; line-height: 1.2; }
 
-    /* Social e Cards */
     .social-container { display: flex; justify-content: center; gap: 40px; margin-top: 15px; margin-bottom: 15px; }
     .insta-original img { filter: grayscale(100%) brightness(0) !important; }
     .social-icon img:hover { transform: scale(1.1); }
     .card-profissional { background-color: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.08); margin-bottom: 15px; border-left: 5px solid #FF8C00; width: 100%; }
     .sticky-aviso { position: sticky; top: 0; z-index: 1000; background-color: #FF8C00; color: white !important; text-align: center; padding: 10px; font-weight: bold; font-size: 12px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 15px; }
     
-    /* Carrossel e Abas */
     .ofertas-container { display: flex; overflow-x: auto; gap: 10px; padding-bottom: 10px; scrollbar-width: none; width: 100%; }
     .oferta-item { flex: 0 0 auto; width: 85%; max-width: 320px; border-radius: 10px; overflow: hidden; border: 1px solid #eee; }
     .oferta-item img, .oferta-item video { width: 100%; height: auto; display: block; }
@@ -129,12 +159,9 @@ st.markdown("""
     button[data-baseweb="tab"] { flex-grow: 1 !important; background-color: #f8f9fa !important; border-radius: 5px 5px 0 0 !important; font-size: 12px !important; padding: 10px 0 !important; }
     button[aria-selected="true"] { background-color: #FF8C00 !important; color: white !important; }
     
-    /* Termos */
     .box-termos { height: 150px; overflow-y: scroll; background-color: #f8f9fa; border: 1px solid #ced4da; padding: 10px; border-radius: 8px; font-size: 12px; color: #000 !important; margin-bottom: 15px; text-align: justify; }
     [data-baseweb="checkbox"] div[data-testid="stCheckbox"] label span { border-color: #FF8C00 !important; background-color: white !important; }
     [aria-checked="true"] div:first-child { background-color: #FF8C00 !important; border-color: #FF8C00 !important; }
-    
-    /* Correção Selectbox */
     div[data-baseweb="select"] > div { background-color: #f8f9fa !important; color: #000000 !important; border-color: #ced4da !important; }
     div[data-baseweb="select"] span { color: #000000 !important; }
     div[data-baseweb="menu"] { background-color: #ffffff !important; }
@@ -238,9 +265,14 @@ def app_principal():
             st.write("")
             st.markdown("""<div class="sticky-aviso">Faça o seu orçamento de materiais conosco através do botão do Whatsapp acima.</div>""", unsafe_allow_html=True)
             
+            # FILTRA DADOS DA PLANILHA
             df = st.session_state['prestadores']
             filtro = st.session_state['filtro']
-            df_filtrado = df[df['Categoria'] == filtro]
+            # Garante que filtra ignorando maiusculas/minusculas e trata nulos
+            if 'Categoria' in df.columns:
+                df_filtrado = df[df['Categoria'].astype(str).str.contains(filtro, case=False, na=False)]
+            else:
+                df_filtrado = pd.DataFrame() # Retorna vazio se não tiver coluna Categoria
 
             st.write(f"Encontrados: **{len(df_filtrado)} profissionais**")
             
@@ -248,17 +280,16 @@ def app_principal():
                 medalhas = " ".join(row['Medalhas'])
                 estrelas_html = gerar_estrelas_html(row['Nota'])
                 
-                # VISUALIZAÇÃO DA AGENDA OCUPADA
                 agenda_html = ""
-                if row['Agenda']:
-                    dias_texto = formatar_agenda(row['Agenda'])
-                    agenda_html = f'<div style="color: #D32F2F; font-size: 11px; margin-top: 5px; font-weight: bold;">📅 Agenda Cheia: {dias_texto}</div>'
+                if len(row['Agenda_Lista']) > 0:
+                    dias_texto = ", ".join(row['Agenda_Lista'])
+                    agenda_html = f'<div style="color: #D32F2F; font-size: 11px; margin-top: 5px; font-weight: bold;">📅 Ocupado em: {dias_texto}</div>'
 
                 with st.container():
                     st.markdown(f"""
                     <div class="card-profissional">
                         <div style="display: flex; align-items: center;">
-                            <img src="{row['Foto']}" style="border-radius: 50%; width: 55px; height: 55px; margin-right: 15px; border: 2px solid #EEE;">
+                            <img src="{row['Foto']}" style="border-radius: 50%; width: 55px; height: 55px; margin-right: 15px; border: 2px solid #EEE; object-fit: cover;">
                             <div>
                                 <div style="font-weight:bold; color:#333;">{row['Nome']} {medalhas}</div>
                                 <div style="color:#666; font-size:12px; margin-bottom: 2px;">{row['Categoria']}</div>
@@ -289,8 +320,11 @@ def app_principal():
         st.info("📍 Prestadores na região")
         m = folium.Map(location=[-28.6592, -56.0020], zoom_start=14)
         df_mapa = st.session_state['prestadores']
-        for i, row in df_mapa.iterrows():
-            folium.Marker([row['Latitude'], row['Longitude']], popup=row['Nome'], icon=folium.Icon(color='orange', icon='bolt', prefix='fa')).add_to(m)
+        # Proteção para mapa: só mostra se lat/long forem válidas
+        if 'Latitude' in df_mapa.columns and 'Longitude' in df_mapa.columns:
+            df_mapa = df_mapa.dropna(subset=['Latitude', 'Longitude'])
+            for i, row in df_mapa.iterrows():
+                folium.Marker([row['Latitude'], row['Longitude']], popup=row['Nome'], icon=folium.Icon(color='orange', icon='bolt', prefix='fa')).add_to(m)
         st_folium(m, width=700, height=400)
 
     with aba3:
@@ -327,33 +361,7 @@ def app_principal():
         usuario = st.session_state['usuario']
         st.header(f"Olá, {usuario['nome']}")
         st.caption(f"Perfil: {usuario['tipo']}")
-        
-        # LÓGICA DO CALENDÁRIO NO PERFIL
-        if usuario['tipo'] == 'Prestador de Serviços':
-            st.divider()
-            st.markdown("##### 📅 Gerenciar Agenda")
-            st.info("Marque abaixo os dias que você **NÃO** poderá trabalhar.")
-            
-            # Calendário Multi-Seleção
-            dias_selecionados = st.date_input(
-                "Selecionar dias indisponíveis",
-                value=[],
-                min_value=date.today(),
-                format="DD/MM/YYYY"
-            )
-            
-            # Como st.date_input retorna lista ou único, normalizamos para lista
-            if not isinstance(dias_selecionados, list):
-                # O componente date_input com range ou multi retorna tupla ou lista dependendo da versão
-                # Simplificação: Apenas mostramos que foi salvo na sessão
-                pass
-                
-            if st.button("Salvar Disponibilidade", type="primary"):
-                st.session_state['usuario']['calendario_ocupado'] = dias_selecionados
-                st.success("Agenda atualizada com sucesso!")
-            st.divider()
-
-        opcoes = st.selectbox("Gerenciar Conta", ["Meus Dados", "Sair"])
+        opcoes = st.selectbox("Gerenciar", ["Meus Dados", "Sair"])
         if opcoes == "Meus Dados":
             st.text_input("WhatsApp", value=usuario.get('whats', ''))
             st.button("Salvar", type="primary")
