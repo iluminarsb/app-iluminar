@@ -38,7 +38,7 @@ def definir_medalhas(row):
     if "flaticon" in foto or "avatar" in foto or foto == "" or "3135715" in foto:
         return ['🥈']
     else:
-        # Se for Foto Real = OURO (SEM O RAIO)
+        # Se for Foto Real = OURO (SEM RAIO)
         return ['🥇']
 
 def html_parceiros_dinamico():
@@ -103,32 +103,38 @@ def gerar_dados_ficticios_massivos():
     return df
 
 def carregar_dados_planilha():
+    # Esta função tenta ler a planilha. Se falhar ou estiver vazia, gera dados fictícios.
     df = pd.DataFrame()
     try:
         df = pd.read_csv(SHEET_URL)
         if len(df) == 0: raise Exception("Vazia")
+        
         df = df.loc[:,~df.columns.duplicated()]
         if 'Agenda' not in df.columns: df['Agenda'] = ""
         df['Agenda'] = df['Agenda'].fillna("").astype(str)
         df['Agenda_Lista'] = df['Agenda'].apply(lambda x: [d.strip() for d in x.split(',')] if x.strip() != "" else [])
         df['Nota'] = pd.to_numeric(df['Nota'], errors='coerce').fillna(5.0)
+        
         def corrigir_lat_long(valor):
             try:
                 v = float(valor)
                 if abs(v) > 90: return v / 10 
                 return v
             except: return -28.6592 
+        
         df['Latitude'] = df['Latitude'].apply(corrigir_lat_long)
         df['Longitude'] = pd.to_numeric(df['Longitude'], errors='coerce')
         if 'NF' not in df.columns: df['NF'] = False
         else: df['NF'] = df['NF'].astype(bool)
         if 'Status' not in df.columns: df['Status'] = "Disponível"
+        
         def corrigir_foto(f):
             if pd.isna(f) or str(f).strip() == '' or str(f).lower() == 'avatar': return "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
             return f 
         df['Foto'] = df['Foto'].apply(corrigir_foto)
         df['Medalhas'] = df.apply(definir_medalhas, axis=1)
     except Exception:
+        # Se a planilha falhar, usa os dados fictícios
         df = gerar_dados_ficticios_massivos()
     return df
 
@@ -136,11 +142,7 @@ def inicializar_session_state():
     if 'usuario' not in st.session_state: st.session_state['usuario'] = None
     if 'aceitou_termos' not in st.session_state: st.session_state['aceitou_termos'] = False
     
-    # LIMPEZA DE CACHE (Para garantir que o RAIO suma)
-    # Se já existir prestadores na memória, recarrega para aplicar a nova regra da medalha sem raio
-    if 'prestadores' in st.session_state:
-        del st.session_state['prestadores']
-    
+    # --- MURAL FIXO ---
     if 'mural_posts' not in st.session_state:
         comentarios = [
             ("Ana Silva", "women/44.jpg", "Alguém indica um eletricista urgente?"),
@@ -161,37 +163,54 @@ def inicializar_session_state():
             posts.append({"id": i, "autor": nome, "avatar": f"https://randomuser.me/api/portraits/{img}", "texto": texto, "respostas": [], "denuncias": 0})
         st.session_state['mural_posts'] = posts
         
+    # --- PRESTADORES FIXOS (SÓ GERA UMA VEZ) ---
     if 'prestadores' not in st.session_state:
+        # Carrega e salva na memória para não mudar ao clicar
         st.session_state['prestadores'] = carregar_dados_planilha()
 
 inicializar_session_state()
 
-# --- 3. ESTILO VISUAL (CSS V68.0 - CORREÇÕES DE COR E LAYOUT) ---
+# --- 3. ESTILO VISUAL (CSS V69.0 - BLOQUEIO DE TEMA ESCURO) ---
 st.markdown("""
     <style>
     :root { color-scheme: light; }
     .stApp { background-color: #ffffff; color: #000000; }
     .block-container { padding: 1rem; padding-bottom: 5rem; }
 
-    /* CORREÇÃO DEFINITIVA DE CAMPOS PRETOS (FORCE LIGHT MODE) */
-    /* Isso força todos os inputs a terem fundo claro e texto preto */
-    input, textarea, select, .stTextInput input, .stTextArea textarea, 
-    div[data-baseweb="select"] div, div[data-baseweb="input"],
-    div[role="listbox"], div[data-baseweb="base-input"] {
-        background-color: #f8f9fa !important; 
+    /* --- SOLUÇÃO NUCLEAR PARA CAMPOS PRETOS --- */
+    /* Força fundo branco e texto preto em TODOS os inputs, ignorando tema do celular */
+    input, textarea, select, 
+    .stTextInput input, .stTextArea textarea, 
+    div[data-baseweb="select"] > div, 
+    div[data-baseweb="base-input"], 
+    div[class*="stSelectbox"] div {
+        background-color: #f8f9fa !important;
         color: #000000 !important;
-        -webkit-text-fill-color: #000000 !important;
+        -webkit-text-fill-color: #000000 !important; /* Para Safari/iPhone */
         caret-color: #000000 !important;
         border-color: #ced4da !important;
     }
     
-    /* Menu Suspenso (Dropdown) */
-    ul[data-baseweb="menu"], div[data-baseweb="popover"], li[data-baseweb="option"] { 
-        background-color: #ffffff !important; 
-        color: #000000 !important; 
+    /* Garante que o menu suspenso (opções) seja branco */
+    div[data-baseweb="popover"], ul[data-baseweb="menu"] {
+        background-color: #ffffff !important;
+    }
+    li[data-baseweb="option"] {
+        color: #000000 !important;
+        background-color: #ffffff !important;
+    }
+    /* Item selecionado ou hover no menu */
+    li[aria-selected="true"], li[data-baseweb="option"]:hover {
+        background-color: #f0f0f0 !important;
+        color: #000000 !important;
     }
     
-    /* CARROSSEL ESQUERDA */
+    /* Texto dentro do select quando fechado */
+    div[data-baseweb="select"] span {
+        color: #000000 !important;
+    }
+
+    /* CARROSSEL */
     .ofertas-container { display: flex; overflow-x: auto; gap: 15px; padding: 10px; padding-left: 5px; scrollbar-width: none; width: 100%; justify-content: flex-start; }
     .oferta-item { flex: 0 0 auto; width: 85%; max-width: 320px; border-radius: 10px; overflow: hidden; border: 1px solid #eee; }
     .oferta-item img, .oferta-item video { width: 100%; height: auto; display: block; }
