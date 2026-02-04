@@ -59,7 +59,7 @@ def html_parceiros_dinamico():
     return f"""<div class="ofertas-container" style="justify-content: center;">{html_content}</div>"""
 
 def gerar_dados_ficticios_massivos():
-    """Gera 10 profissionais por categoria (GÊNEROS AJUSTADOS)"""
+    """Gera 10 profissionais por categoria"""
     categorias = [
         "Eletricista", "Pedreiro(a)", "Encanador(a)", "Ar-Condicionado", 
         "Gesseiro(a)", "Vidraceiro(a)", "Jardineiro(a)", "Marmorista", "Serviços Gerais"
@@ -95,7 +95,6 @@ def carregar_dados_planilha():
         df = pd.read_csv(SHEET_URL)
         if len(df) == 0: raise Exception("Vazia")
         
-        # Tratamento de Colunas Duplicadas (Erro da Imagem 6)
         df = df.loc[:,~df.columns.duplicated()]
 
         if 'Agenda' not in df.columns: df['Agenda'] = ""
@@ -103,14 +102,13 @@ def carregar_dados_planilha():
         df['Agenda_Lista'] = df['Agenda'].apply(lambda x: [d.strip() for d in x.split(',')] if x.strip() != "" else [])
         df['Nota'] = pd.to_numeric(df['Nota'], errors='coerce').fillna(5.0)
         
-        # CORREÇÃO DE LATITUDE (Erro da Imagem 6: -286.592 -> -28.6592)
         def corrigir_lat_long(valor):
             try:
                 v = float(valor)
-                if abs(v) > 90: return v / 10 # Corrige erro de digitação
+                if abs(v) > 90: return v / 10 
                 return v
             except:
-                return -28.6592 # Padrão São Borja
+                return -28.6592 
         
         df['Latitude'] = df['Latitude'].apply(corrigir_lat_long)
         df['Longitude'] = pd.to_numeric(df['Longitude'], errors='coerce')
@@ -157,14 +155,13 @@ def inicializar_session_state():
 
 inicializar_session_state()
 
-# --- 3. ESTILO VISUAL (CSS V60.0) ---
+# --- 3. ESTILO VISUAL (CSS V62.0) ---
 st.markdown("""
     <style>
     :root { color-scheme: light; }
     .stApp { background-color: #ffffff; color: #000000; }
     .block-container { padding: 1rem; padding-bottom: 5rem; }
 
-    /* CORREÇÃO DO MURAL E INPUTS (CINZA CLARO FORÇADO) */
     .stTextArea textarea, .stTextInput input {
         background-color: #f8f9fa !important;
         color: #000000 !important;
@@ -174,7 +171,6 @@ st.markdown("""
     }
     div[data-baseweb="input"] { background-color: #f8f9fa !important; }
 
-    /* ABAS */
     div[data-baseweb="tab-list"] { display: flex; width: 100%; gap: 2px; }
     button[data-baseweb="tab"] {
         flex-grow: 1 !important; 
@@ -187,17 +183,14 @@ st.markdown("""
     }
     button[aria-selected="true"] { background-color: #FF8C00 !important; color: white !important; }
 
-    /* ÍCONES SOCIAIS */
     .social-container { display: flex; justify-content: center; gap: 40px; margin-top: 15px; margin-bottom: 25px; width: 100%; }
     .insta-original img { filter: grayscale(100%) brightness(0) !important; }
 
-    /* BOTÕES DE LOGIN (RETANGULARES) */
     div[data-testid="column"] > div > div > div > div > button {
         border-radius: 12px !important; width: 100% !important; border: 1px solid #FF8C00 !important;
         font-size: 16px !important; padding: 12px !important; height: auto !important;
     }
 
-    /* ÍCONES DE CATEGORIA (REDONDOS NA GRADE) */
     div[data-testid="stHorizontalBlock"] button {
         border-radius: 50% !important; width: 75px !important; height: 75px !important;
         padding: 0 !important; font-size: 35px !important; line-height: 1 !important;
@@ -212,7 +205,6 @@ st.markdown("""
         background-color: white !important; border: 2px solid #FF8C00 !important; color: black !important;
     }
 
-    /* GERAL */
     .btn-whatsapp { display: block; width: 100%; background-color: #25D366; color: white !important; text-align: center; padding: 10px; border-radius: 20px; text-decoration: none; font-weight: bold; font-size: 14px; margin-top: 5px; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
     .card-profissional { background-color: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 15px; border-left: 5px solid #FF8C00; width: 100%; }
     .sticky-aviso { position: sticky; top: 0; z-index: 1000; background-color: #FF8C00; color: white !important; text-align: center; padding: 10px; font-weight: bold; font-size: 12px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 15px; }
@@ -248,7 +240,6 @@ def formulario_cadastro_prestador():
     nome_completo = st.text_input("Nome Completo (Obrigatório)")
     cpf = st.text_input("CPF (Somente números)")
     nome_exibicao = st.text_input("Nome no App (Ex: João Eletricista)")
-    # CATEGORIAS COM GÊNERO AJUSTADO
     categoria = st.selectbox("Sua Categoria", ["Eletricista", "Pedreiro(a)", "Encanador(a)", "Ar-Condicionado", "Gesseiro(a)", "Vidraceiro(a)", "Jardineiro(a)", "Marmorista", "Serviços Gerais"])
     whats = st.text_input("WhatsApp (Com DDD)")
     
@@ -351,7 +342,6 @@ def app_principal():
                 ofertas_html += f'<div class="oferta-item"><img src="data:image/jpeg;base64,{b64}"></div>'
         if not ofertas_html: ofertas_html = '<div class="oferta-item"><img src="https://via.placeholder.com/300x200/FF8C00/FFFFFF?text=Ofertas"></div>'
         
-        # OFERTAS NO TOPO
         if st.session_state['filtro'] == "":
             st.divider()
             st.markdown("##### 🔥 Ofertas da Semana")
@@ -368,7 +358,6 @@ def app_principal():
             df = st.session_state['prestadores']
             filtro = st.session_state['filtro']
             if 'Categoria' in df.columns:
-                # FILTRO ROBUSTO (Ignora maiusculas e acentos)
                 df_filtrado = df[df['Categoria'].astype(str).str.contains(filtro, case=False, na=False)]
             else: df_filtrado = pd.DataFrame()
 
@@ -390,7 +379,6 @@ def app_principal():
                 ])
                 st.markdown(card, unsafe_allow_html=True)
             
-            # OFERTAS EM BAIXO
             st.divider()
             st.markdown("##### 🔥 Aproveite também")
             st.markdown(f"""<div class="ofertas-container">{ofertas_html}</div>""", unsafe_allow_html=True)
@@ -398,16 +386,46 @@ def app_principal():
     with aba2:
         st.info("📍 Mapa - Prestadores")
         m = folium.Map(location=[-28.6592, -56.0020], zoom_start=13)
-        # MAPA COM CORREÇÃO DE LOCALIZAÇÃO (IMAGEM 1)
+        
+        # --- LÓGICA DO MAPA FILTRADO E ÍCONES ---
         df_mapa = st.session_state['prestadores']
-        # Filtra apenas quem tem coordenadas válidas
+        
+        # SE TIVER FILTRO ATIVO, APLICA NO MAPA TAMBÉM
+        filtro_atual = st.session_state.get('filtro', "")
+        if filtro_atual:
+            st.caption(f"Exibindo apenas: **{filtro_atual}**")
+            df_mapa = df_mapa[df_mapa['Categoria'].astype(str).str.contains(filtro_atual, case=False, na=False)]
+        else:
+            st.caption("Exibindo: **Todos**")
+
         df_mapa = df_mapa[pd.to_numeric(df_mapa['Latitude'], errors='coerce').notnull()]
         
+        # DICIONÁRIO DE ÍCONES PARA O MAPA
+        icones_mapa = {
+            "Eletricista": "bolt",
+            "Pedreiro(a)": "gavel",
+            "Encanador(a)": "tint",
+            "Ar-Condicionado": "snowflake-o",
+            "Gesseiro(a)": "paint-brush",
+            "Vidraceiro(a)": "square",
+            "Jardineiro(a)": "leaf",
+            "Marmorista": "cube",
+            "Serviços Gerais": "wrench"
+        }
+
         for i, row in df_mapa.iterrows():
+            # Tenta pegar ícone específico, se não achar usa 'user'
+            # Remove (a) para comparar chaves se necessário, mas aqui usaremos contains
+            icone_nome = "user"
+            for chave, valor in icones_mapa.items():
+                if chave in row['Categoria']:
+                    icone_nome = valor
+                    break
+            
             folium.Marker(
                 [row['Latitude'], row['Longitude']], 
                 popup=row['Nome'], 
-                icon=folium.Icon(color='orange', icon='bolt', prefix='fa')
+                icon=folium.Icon(color='orange', icon=icone_nome, prefix='fa')
             ).add_to(m)
         st_folium(m, width=700, height=400)
 
