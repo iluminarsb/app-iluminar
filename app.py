@@ -42,7 +42,7 @@ def definir_medalhas(row):
     if "flaticon" in foto or "avatar" in foto or foto == "" or "3135715" in foto:
         return ['🥈']
     else:
-        return ['🥇']
+        return ['🥇'] # SEM RAIO
 
 def html_parceiros_dinamico():
     html_content = ""
@@ -115,14 +115,12 @@ def carregar_dados_planilha():
         df['Agenda'] = df['Agenda'].fillna("").astype(str)
         df['Agenda_Lista'] = df['Agenda'].apply(lambda x: [d.strip() for d in x.split(',')] if x.strip() != "" else [])
         df['Nota'] = pd.to_numeric(df['Nota'], errors='coerce').fillna(5.0)
-        
         def corrigir_lat_long(valor):
             try:
                 v = float(valor)
                 if abs(v) > 90: return v / 10 
                 return v
             except: return -28.6592 
-        
         df['Latitude'] = df['Latitude'].apply(corrigir_lat_long)
         df['Longitude'] = pd.to_numeric(df['Longitude'], errors='coerce')
         if 'NF' not in df.columns: df['NF'] = False
@@ -141,7 +139,6 @@ def inicializar_session_state():
     if 'usuario' not in st.session_state: st.session_state['usuario'] = None
     if 'aceitou_termos' not in st.session_state: st.session_state['aceitou_termos'] = False
     
-    # --- MURAL FIXO ---
     if 'mural_posts' not in st.session_state:
         comentarios = [
             ("Ana Silva", "women/44.jpg", "Alguém indica um eletricista urgente?"),
@@ -161,31 +158,61 @@ def inicializar_session_state():
         for i, (nome, img, texto) in enumerate(comentarios):
             posts.append({"id": i, "autor": nome, "avatar": f"https://randomuser.me/api/portraits/{img}", "texto": texto, "respostas": [], "denuncias": 0})
         st.session_state['mural_posts'] = posts
-    
-    # --- DADOS FIXOS NA SESSÃO ---
-    # Só carrega se não existir. Isso garante que não muda a cada clique.
+        
     if 'prestadores' not in st.session_state:
         st.session_state['prestadores'] = carregar_dados_planilha()
 
 inicializar_session_state()
 
-# --- 3. ESTILO VISUAL (CSS V71.0) ---
+# --- 3. ESTILO VISUAL (CSS V73.0 - O RETORNO DO FORCE LIGHT MODE) ---
 st.markdown("""
     <style>
+    /* Força o tema claro em todo o app */
     :root { color-scheme: light; }
     .stApp { background-color: #ffffff; color: #000000; }
-    .block-container { padding: 1rem; padding-bottom: 5rem; }
-
-    /* CORREÇÃO CAMPOS PRETOS */
-    input, textarea, select, .stTextInput input, .stTextArea textarea, 
-    div[data-baseweb="select"] div, div[data-baseweb="input"],
-    div[role="listbox"], div[data-baseweb="base-input"],
-    div[class*="stSelectbox"] div {
-        background-color: #f8f9fa !important; color: #000000 !important;
-        -webkit-text-fill-color: #000000 !important; border-color: #ced4da !important;
+    
+    /* ============================================================
+       CORREÇÃO SUPREMA PARA INPUTS EM MODO ESCURO
+       ============================================================ */
+    
+    /* 1. Alvos genéricos de input */
+    input, textarea, select {
+        background-color: #f8f9fa !important;
+        color: #000000 !important;
+        caret-color: #000000 !important;
     }
-    ul[data-baseweb="menu"], div[data-baseweb="popover"] { background-color: #ffffff !important; }
-    li[data-baseweb="option"] { color: #000000 !important; }
+
+    /* 2. Alvos específicos do Streamlit (Divs wrappers) */
+    div[data-baseweb="base-input"],
+    div[data-baseweb="input"],
+    div[data-baseweb="select"] > div,
+    .stTextInput > div > div > input,
+    .stTextArea > div > div > textarea {
+        background-color: #f8f9fa !important;
+        color: #000000 !important;
+        border-color: #ced4da !important;
+        -webkit-text-fill-color: #000000 !important; /* Essencial para Safari/iOS */
+    }
+
+    /* 3. Menus Suspensos e Popovers */
+    div[data-baseweb="popover"],
+    ul[data-baseweb="menu"] {
+        background-color: #ffffff !important;
+    }
+    li[data-baseweb="option"] {
+        color: #000000 !important;
+        background-color: #ffffff !important;
+    }
+    li[data-baseweb="option"]:hover, li[aria-selected="true"] {
+        background-color: #f0f0f0 !important;
+    }
+    
+    /* 4. Labels e Textos */
+    label, .stMarkdown, p, h1, h2, h3, h4, h5, h6 {
+        color: #000000 !important;
+    }
+
+    /* ============================================================ */
 
     /* CARROSSEL */
     .ofertas-container { display: flex; overflow-x: auto; gap: 15px; padding: 10px; padding-left: 5px; scrollbar-width: none; width: 100%; justify-content: flex-start; }
