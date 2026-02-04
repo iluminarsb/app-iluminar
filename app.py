@@ -92,62 +92,85 @@ def inicializar_session_state():
 
 inicializar_session_state()
 
-# --- 3. ESTILO VISUAL (CSS V56.0) ---
+# --- 3. ESTILO VISUAL CORRIGIDO (CSS V57.0) ---
 st.markdown("""
     <style>
     :root { color-scheme: light; }
     .stApp { background-color: #ffffff; color: #000000; }
     .block-container { padding: 1rem; padding-bottom: 5rem; }
 
-    /* BOTÕES DA TELA DE IDENTIFICAÇÃO (RETANGULARES) */
-    /* Força os botões dentro das colunas a serem largos e retangulares */
-    div[data-testid="column"] button[kind="primary"], 
-    div[data-testid="column"] button[kind="secondary"] {
-        width: 100% !important;
+    /* 1. CORREÇÃO DOS ÍCONES SOCIAIS (CENTRALIZADOS) */
+    .social-container { 
+        display: flex; 
+        justify-content: center; 
+        align-items: center; 
+        gap: 40px; 
+        margin-top: 15px; 
+        margin-bottom: 25px; 
+        width: 100%;
+    }
+    .insta-original img { filter: grayscale(100%) brightness(0) !important; }
+    .social-icon img:hover { transform: scale(1.1); transition: 0.3s; }
+
+    /* 2. BOTÕES DE LOGIN (RETANGULARES E LARGOS) */
+    /* Isso garante que os botões de 'Entrar' não fiquem redondos */
+    div[data-testid="column"] button {
         border-radius: 12px !important;
-        height: auto !important;
-        padding-top: 12px !important;
-        padding-bottom: 12px !important;
+        width: 100% !important;
+        border: 1px solid #FF8C00 !important;
         font-size: 16px !important;
+        padding: 10px !important;
     }
 
-    /* ICONS DE CATEGORIA (CÍRCULOS) */
-    /* Mantém os ícones do menu redondos e grandes */
-    div[data-testid="stHorizontalBlock"] button[kind="primary"],
-    div[data-testid="stHorizontalBlock"] button[kind="secondary"] {
+    /* 3. ÍCONES DE CATEGORIA (REDONDOS/CÍRCULOS) */
+    /* Aplica estilo redondo APENAS aos botões da grade de categorias */
+    div[data-testid="stHorizontalBlock"] button {
         border-radius: 50% !important;
-        width: 80px !important; 
-        height: 80px !important; 
+        width: 80px !important;
+        height: 80px !important;
         padding: 0 !important;
-        font-size: 45px !important; /* ÍCONE MAIOR */
+        font-size: 40px !important;
+        line-height: 1 !important;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+        margin: 0 auto !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
     }
-    
-    button[kind="primary"] {
-        background-color: #FF8C00 !important; border: 1px solid #FF8C00 !important;
-        color: #FFFF00 !important;
-        text-shadow: 1px 1px 2px #333333;
+
+    /* Estilo do botão selecionado (Laranja) */
+    div[data-testid="stHorizontalBlock"] button[kind="primary"] {
+        background-color: #FF8C00 !important;
+        border: 2px solid #FF8C00 !important;
+        color: #FFFF00 !important; /* Raio Amarelo */
+        text-shadow: 1px 1px 1px #333;
     }
-    
-    button[kind="secondary"] {
-        background-color: white !important; 
-        border: 2px solid #FF8C00 !important; 
+
+    /* Estilo do botão normal (Branco) */
+    div[data-testid="stHorizontalBlock"] button[kind="secondary"] {
+        background-color: white !important;
+        border: 2px solid #FF8C00 !important;
         color: black !important;
     }
 
-    /* ABAS */
-    button[data-baseweb="tab"] { background-color: #f8f9fa !important; color: #666 !important; font-weight: bold !important; }
+    /* 4. ABAS E OUTROS ELEMENTOS */
+    button[data-baseweb="tab"] { background-color: #f8f9fa !important; color: #666 !important; font-weight: bold !important; border: none !important; }
     button[aria-selected="true"] { background-color: #FF8C00 !important; color: white !important; }
-
-    /* GERAL */
-    .btn-whatsapp { display: block; width: 100%; background-color: #25D366; color: white !important; text-align: center; padding: 8px; border-radius: 20px; text-decoration: none; font-weight: bold; font-size: 14px; margin-top: 5px; border: none; }
-    .card-profissional { background-color: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.08); margin-bottom: 15px; border-left: 5px solid #FF8C00; width: 100%; }
+    
+    .btn-whatsapp { display: block; width: 100%; background-color: #25D366; color: white !important; text-align: center; padding: 10px; border-radius: 20px; text-decoration: none; font-weight: bold; font-size: 14px; margin-top: 5px; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+    
+    .card-profissional { background-color: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 15px; border-left: 5px solid #FF8C00; width: 100%; }
+    
     .sticky-aviso { position: sticky; top: 0; z-index: 1000; background-color: #FF8C00; color: white !important; text-align: center; padding: 10px; font-weight: bold; font-size: 12px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 15px; }
+    
     .ofertas-container { display: flex; overflow-x: auto; gap: 10px; padding-bottom: 10px; scrollbar-width: none; width: 100%; }
     .oferta-item { flex: 0 0 auto; width: 85%; max-width: 320px; border-radius: 10px; overflow: hidden; border: 1px solid #eee; }
     .oferta-item img, .oferta-item video { width: 100%; height: auto; display: block; }
     .box-termos { height: 150px; overflow-y: scroll; background-color: #f8f9fa; border: 1px solid #ced4da; padding: 10px; border-radius: 8px; font-size: 12px; color: #000 !important; margin-bottom: 15px; text-align: justify; }
-    div[data-testid="stHorizontalBlock"] { display: grid !important; grid-template-columns: repeat(3, 1fr) !important; gap: 15px !important; width: 100% !important; justify-items: center !important; }
-    .rotulo-icone { display: block; width: 100%; text-align: center; font-size: 12px; font-weight: bold; color: #444 !important; margin-top: 5px; line-height: 1.2; }
+    
+    /* Input do Mural mais bonito */
+    .stTextArea textarea { border-radius: 10px !important; border: 1px solid #ddd !important; }
+    .rotulo-icone { display: block; width: 100%; text-align: center; font-size: 11px; font-weight: bold; color: #444 !important; margin-top: 5px; line-height: 1.2; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -163,14 +186,14 @@ def tela_termos():
     aceite = st.checkbox("Li os termos de uso, concordo e aceito.")
     if aceite:
         st.write("")
-        col_t1, col_t2 = st.columns([1,10]) # Hack para alinhar botão
-        with col_t2:
-            if st.button("AVANÇAR", type="secondary", key="btn_termos"):
-                st.session_state['aceitou_termos'] = True
-                st.rerun()
+        if st.button("AVANÇAR", type="primary"): # Botão retangular pelo CSS global da coluna
+            st.session_state['aceitou_termos'] = True
+            st.rerun()
 
 def formulario_cadastro_prestador():
     st.markdown("### 📝 Cadastro de Prestador")
+    st.info("Preencha todos os campos para se cadastrar.")
+    
     nome_completo = st.text_input("Nome Completo (Obrigatório)")
     cpf = st.text_input("CPF (Somente números)", max_chars=11)
     nome_exibicao = st.text_input("Nome que aparecerá no App (Ex: João Eletricista)")
@@ -218,30 +241,26 @@ def tela_identificacao():
     
     st.markdown("##### Para Clientes")
     nome = st.text_input("Seu Nome (Opcional)")
-    # UPLOAD DE FOTO CLIENTE
     uploaded_cliente = st.file_uploader("Sua Foto (Opcional - Câmera ou Galeria)", type=['jpg', 'png', 'jpeg'], key="foto_cliente")
     
-    # AVISO EXPLICATIVO (Pedido na imagem 6a29ea)
     if uploaded_cliente:
-        st.caption("ℹ️ Nota: Como é um protótipo, se você enviar uma foto, o sistema simula que salvou usando uma foto de perfil genérica, mas a funcionalidade do botão já está operante.")
+        st.caption("ℹ️ Nota: Como é um protótipo, o sistema simula o salvamento da foto.")
     
     avatar_cliente = "https://cdn-icons-png.flaticon.com/512/1077/1077114.png" 
     if uploaded_cliente:
         avatar_cliente = "https://randomuser.me/api/portraits/women/88.jpg" 
 
-    # Botão Retangular Largo
+    # Botões Retangulares (Via CSS Global da Coluna)
     if st.button("Sou Cliente (Entrar)", type="primary"):
         st.session_state['usuario'] = {"nome": nome if nome else "Visitante", "tipo": "Cliente", "foto": avatar_cliente}
         st.rerun()
             
     st.divider()
     st.markdown("##### Para Profissionais")
-    # Botão Retangular Largo
     if st.button("Quero me cadastrar como Prestador"):
         st.session_state['tela_cadastro'] = True
         st.rerun()
     
-    # Botão Retangular Largo
     if st.button("Já tenho cadastro (Entrar)", type="secondary"):
         st.session_state['usuario'] = {"nome": "Prestador", "tipo": "Prestador de Serviços"}
         st.rerun()
@@ -288,6 +307,7 @@ def app_principal():
     icon_insta = "https://cdn-icons-png.flaticon.com/512/1384/1384031.png"
     icon_whats_vasado = "https://cdn-icons-png.flaticon.com/512/220/220236.png"
 
+    # HTML CORRIGIDO PARA ÍCONES SOCIAIS
     st.markdown(f"""
     <div class="social-container">
         <a href="{insta_url}" target="_blank" class="social-icon insta-original"><img src="{icon_insta}" width="35" height="35"></a>
@@ -353,6 +373,7 @@ def app_principal():
                     agenda_html = f'<div style="color: #D32F2F; font-size: 11px; margin-top: 5px; font-weight: bold;">📅 Ocupado em: {dias_texto}</div>'
 
                 with st.container():
+                    # HTML DO CARD (SEM IDENTAÇÃO PARA NÃO VAZAR)
                     card_html = "".join([
                         f'<div class="card-profissional">',
                         f'<div style="display: flex; align-items: center;">',
@@ -430,12 +451,12 @@ def app_principal():
             ativo = st.toggle("Ativo para Trabalho", value=True)
             if not ativo: st.warning("Você está invisível nas buscas.")
         
-        # Se for cliente e tiver foto, mostra
+        # Correção do Erro da Foto do Cliente
         if usuario['tipo'] == 'Cliente' and usuario.get('foto'):
-             st.image(usuario['foto'], width=100, style="border-radius: 50%;")
+             st.image(usuario['foto'], width=100) # Removeu estilo inline quebrado
 
         st.divider()
-        st.markdown("""<style>div[data-testid="stButton"] button {width: 100%; border-radius: 10px !important; height: auto !important;}</style>""", unsafe_allow_html=True)
+        # Botão Sair Retangular
         if st.button("Sair da Conta", type="secondary"):
             st.session_state['usuario'] = None
             st.session_state['aceitou_termos'] = False
