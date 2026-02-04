@@ -52,39 +52,53 @@ def html_parceiros_dinamico():
         elif os.path.exists(f"{nome_base}.jpg"):
             b64 = get_media_base64(f"{nome_base}.jpg")
             html_content += f'<div class="oferta-item" style="width: 150px;"><img src="data:image/jpeg;base64,{b64}"></div>'
-    
     if not html_content:
         html_content = '<div style="text-align:center; color:#999; width:100%;">Em breve</div>'
-        
     return f"""<div class="ofertas-container" style="justify-content: center;">{html_content}</div>"""
 
 def gerar_dados_ficticios_massivos():
-    """Gera 10 profissionais por categoria"""
+    """Gera 10 profissionais por categoria com CORREÇÃO DE GÊNERO NA FOTO"""
     categorias = [
         "Eletricista", "Pedreiro(a)", "Encanador(a)", "Ar-Condicionado", 
         "Gesseiro(a)", "Vidraceiro(a)", "Jardineiro(a)", "Marmorista", "Serviços Gerais"
     ]
-    nomes_base = ["Carlos", "João", "Roberto", "Paulo", "Marcos", "José", "Luiz", "Ana", "Maria", "Pedro", "Lucas", "Fernanda", "Rafael", "Bruno"]
-    sobrenomes = ["Silva", "Santos", "Oliveira", "Souza", "Lima", "Ferreira", "Costa", "Pereira", "Almeida", "Nascimento"]
+    
+    nomes_homens = ["Carlos", "João", "Roberto", "Paulo", "Marcos", "José", "Luiz", "Pedro", "Lucas", "Rafael", "Bruno", "Diego", "Felipe", "Anderson"]
+    nomes_mulheres = ["Ana", "Maria", "Fernanda", "Juliana", "Carla", "Amanda", "Sonia", "Patrícia", "Camila", "Larissa", "Beatriz", "Mariana"]
+    sobrenomes = ["Silva", "Santos", "Oliveira", "Souza", "Lima", "Ferreira", "Costa", "Pereira", "Almeida", "Nascimento", "Rodrigues", "Gomes"]
+    
     data = []
     
     for cat in categorias:
-        for i in range(10): 
-            nome_completo = f"{random.choice(nomes_base)} {random.choice(sobrenomes)}"
+        for i in range(10): # 10 por categoria
+            # Decide gênero aleatoriamente (70% homem, 30% mulher para construção civil, ex)
+            genero = 'men' if random.random() < 0.8 else 'women'
+            
+            if genero == 'men':
+                nome_proprio = random.choice(nomes_homens)
+            else:
+                nome_proprio = random.choice(nomes_mulheres)
+                
+            nome_completo = f"{nome_proprio} {random.choice(sobrenomes)}"
+            
+            # Alterna entre Foto Real (Ouro) e Avatar (Prata)
             if i % 2 == 0:
-                foto = f"https://randomuser.me/api/portraits/{'women' if i%3==0 else 'men'}/{random.randint(1,99)}.jpg"
+                # Foto real correspondente ao gênero
+                foto = f"https://randomuser.me/api/portraits/{genero}/{random.randint(1,99)}.jpg"
                 nf = True
             else:
                 foto = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
                 nf = False
+            
             item = {
                 'Nome': nome_completo, 'Categoria': cat, 'Whatsapp': '555599999999',
-                'Latitude': -28.6590 + (random.uniform(-0.01, 0.01)),
-                'Longitude': -56.0020 + (random.uniform(-0.01, 0.01)),
+                'Latitude': -28.6590 + (random.uniform(-0.015, 0.015)), # Espalha um pouco mais
+                'Longitude': -56.0020 + (random.uniform(-0.015, 0.015)),
                 'Status': 'Disponível', 'Nota': round(random.uniform(4.5, 5.0), 1),
                 'Foto': foto, 'Agenda_Lista': [], 'NF': nf
             }
             data.append(item)
+            
     df = pd.DataFrame(data)
     df['Medalhas'] = df.apply(definir_medalhas, axis=1)
     return df
@@ -96,7 +110,6 @@ def carregar_dados_planilha():
         if len(df) == 0: raise Exception("Vazia")
         
         df = df.loc[:,~df.columns.duplicated()]
-
         if 'Agenda' not in df.columns: df['Agenda'] = ""
         df['Agenda'] = df['Agenda'].fillna("").astype(str)
         df['Agenda_Lista'] = df['Agenda'].apply(lambda x: [d.strip() for d in x.split(',')] if x.strip() != "" else [])
@@ -155,14 +168,14 @@ def inicializar_session_state():
 
 inicializar_session_state()
 
-# --- 3. ESTILO VISUAL (CSS V62.0) ---
+# --- 3. ESTILO VISUAL (CSS V63.0) ---
 st.markdown("""
     <style>
     :root { color-scheme: light; }
     .stApp { background-color: #ffffff; color: #000000; }
     .block-container { padding: 1rem; padding-bottom: 5rem; }
 
-    .stTextArea textarea, .stTextInput input {
+    .stTextArea textarea, .stTextInput input, .stSelectbox div[data-baseweb="select"] {
         background-color: #f8f9fa !important;
         color: #000000 !important;
         -webkit-text-fill-color: #000000 !important;
@@ -385,43 +398,42 @@ def app_principal():
 
     with aba2:
         st.info("📍 Mapa - Prestadores")
+        
+        # --- FILTRO DENTRO DO MAPA ---
+        # Se veio com filtro da home, usa ele. Se não, permite escolher.
+        opcoes_filtro = ["Todos", "Eletricista", "Pedreiro(a)", "Encanador(a)", "Ar-Condicionado", "Gesseiro(a)", "Vidraceiro(a)", "Jardineiro(a)", "Marmorista", "Serviços Gerais"]
+        
+        # Lógica para definir o índice padrão do selectbox
+        index_padrao = 0
+        if st.session_state.get('filtro'):
+            # Tenta achar o filtro atual na lista
+            for idx, op in enumerate(opcoes_filtro):
+                if st.session_state['filtro'] in op:
+                    index_padrao = idx
+                    break
+        
+        filtro_mapa = st.selectbox("O que você quer buscar?", opcoes_filtro, index=index_padrao)
+        
         m = folium.Map(location=[-28.6592, -56.0020], zoom_start=13)
-        
-        # --- LÓGICA DO MAPA FILTRADO E ÍCONES ---
         df_mapa = st.session_state['prestadores']
-        
-        # SE TIVER FILTRO ATIVO, APLICA NO MAPA TAMBÉM
-        filtro_atual = st.session_state.get('filtro', "")
-        if filtro_atual:
-            st.caption(f"Exibindo apenas: **{filtro_atual}**")
-            df_mapa = df_mapa[df_mapa['Categoria'].astype(str).str.contains(filtro_atual, case=False, na=False)]
-        else:
-            st.caption("Exibindo: **Todos**")
-
         df_mapa = df_mapa[pd.to_numeric(df_mapa['Latitude'], errors='coerce').notnull()]
         
-        # DICIONÁRIO DE ÍCONES PARA O MAPA
+        # Aplica o filtro selecionado NO MAPA
+        if filtro_mapa != "Todos":
+            df_mapa = df_mapa[df_mapa['Categoria'].astype(str).str.contains(filtro_mapa, case=False, na=False)]
+
         icones_mapa = {
-            "Eletricista": "bolt",
-            "Pedreiro(a)": "gavel",
-            "Encanador(a)": "tint",
-            "Ar-Condicionado": "snowflake-o",
-            "Gesseiro(a)": "paint-brush",
-            "Vidraceiro(a)": "square",
-            "Jardineiro(a)": "leaf",
-            "Marmorista": "cube",
-            "Serviços Gerais": "wrench"
+            "Eletricista": "bolt", "Pedreiro(a)": "gavel", "Encanador(a)": "tint",
+            "Ar-Condicionado": "snowflake-o", "Gesseiro(a)": "paint-brush", "Vidraceiro(a)": "square",
+            "Jardineiro(a)": "leaf", "Marmorista": "cube", "Serviços Gerais": "wrench"
         }
 
         for i, row in df_mapa.iterrows():
-            # Tenta pegar ícone específico, se não achar usa 'user'
-            # Remove (a) para comparar chaves se necessário, mas aqui usaremos contains
             icone_nome = "user"
             for chave, valor in icones_mapa.items():
                 if chave in row['Categoria']:
                     icone_nome = valor
                     break
-            
             folium.Marker(
                 [row['Latitude'], row['Longitude']], 
                 popup=row['Nome'], 
