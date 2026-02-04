@@ -6,7 +6,7 @@ import os
 import base64
 import random
 
-# --- 1. CONFIGURAÇÃO INICIAL (Obrigatório ser a primeira linha) ---
+# --- 1. CONFIGURAÇÃO INICIAL ---
 st.set_page_config(
     page_title="Iluminar Conecta", 
     page_icon="💡", 
@@ -19,8 +19,7 @@ st.set_page_config(
 SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQebfRxbrTKHczD0zyzThfru67dqKpCbREHoDjZUPAQYY9OQdzEmxCewcxAdtuLc4Upef5UYdMRE2OD/pub?output=csv"
 # ==============================================================================
 
-# --- 2. TODAS AS FUNÇÕES (MOVIDAS PARA O TOPO PARA EVITAR ERROS) ---
-
+# --- 2. FUNÇÕES (DEFINIDAS NO TOPO) ---
 def get_media_base64(file_path):
     if os.path.exists(file_path):
         with open(file_path, "rb") as f:
@@ -43,7 +42,7 @@ def definir_medalhas(row):
     if "flaticon" in foto or "avatar" in foto or foto == "" or "3135715" in foto:
         return ['🥈']
     else:
-        return ['🥇'] # SEM RAIO
+        return ['🥇']
 
 def html_parceiros_dinamico():
     html_content = ""
@@ -58,10 +57,8 @@ def html_parceiros_dinamico():
         elif os.path.exists(f"{nome_base}.jpg"):
             b64 = get_media_base64(f"{nome_base}.jpg")
             html_content += f'<div class="oferta-item" style="width: 150px;"><img src="data:image/jpeg;base64,{b64}"></div>'
-    
     if not html_content:
         html_content = '<div style="text-align:center; color:#999; width:100%;">Em breve</div>'
-        
     return f"""<div class="ofertas-container">{html_content}</div>"""
 
 def gerar_dados_ficticios_massivos():
@@ -167,42 +164,43 @@ def inicializar_session_state():
 
 inicializar_session_state()
 
-# --- 3. ESTILO VISUAL (CSS V74.0 - ANTI-DARK MODE NUCLEAR COM @MEDIA) ---
+# --- 3. ESTILO VISUAL (CSS V75.0 - MODO CINZA CLARO FORÇADO) ---
 st.markdown("""
     <style>
-    /* Força o tema claro na raiz */
     :root { color-scheme: light; }
     .stApp { background-color: #ffffff; color: #000000; }
     
     /* ============================================================
-       CORREÇÃO NUCLEAR PARA INPUTS EM MODO ESCURO
+       FORÇAR FUNDO CINZA CLARO NOS INPUTS (SOLUÇÃO DO USUÁRIO)
        ============================================================ */
     
-    /* Regra geral e força bruta via @media para garantir em Mobile */
-    input, textarea, select, .stTextInput input, .stTextArea textarea, div[data-baseweb="select"] div {
-        background-color: #f8f9fa !important;
+    /* Define a cor cinza claro */
+    :root { --input-gray: #ECEFF1; }
+
+    /* Aplica o cinza claro e texto preto a TODOS os inputs e containers */
+    input, textarea, select, 
+    .stTextInput input, 
+    .stTextArea textarea, 
+    div[data-baseweb="select"] div,
+    div[data-baseweb="base-input"],
+    .stSelectbox div {
+        background-color: var(--input-gray) !important;
         color: #000000 !important;
         caret-color: #000000 !important;
         border: 1px solid #ced4da !important;
         -webkit-text-fill-color: #000000 !important;
+        border-radius: 8px !important;
     }
 
-    @media (prefers-color-scheme: dark) {
-        input, textarea, select, 
-        .stTextInput > div > div > input, 
-        .stTextArea > div > div > textarea,
-        div[data-baseweb="base-input"] {
-            background-color: #f8f9fa !important;
-            color: #000000 !important;
-            -webkit-text-fill-color: #000000 !important;
-            border-color: #ced4da !important;
-        }
-    }
-
-    /* Menus Suspensos e Popovers (Garante fundo branco) */
+    /* Menus Suspensos (Opções) também em cinza claro */
     div[data-baseweb="popover"], ul[data-baseweb="menu"], li[data-baseweb="option"] {
-        background-color: #ffffff !important;
+        background-color: var(--input-gray) !important;
         color: #000000 !important;
+    }
+    
+    /* Hover e Seleção no menu */
+    li[data-baseweb="option"]:hover, li[aria-selected="true"] {
+        background-color: #CFD8DC !important; /* Um cinza um pouco mais escuro no hover */
     }
     
     /* Placeholders */
@@ -225,7 +223,7 @@ st.markdown("""
     .insta-original img { filter: grayscale(100%) brightness(0) !important; }
     div[data-testid="column"] button { border-radius: 12px !important; width: 100% !important; border: 1px solid #FF8C00 !important; font-size: 16px !important; padding: 12px !important; height: auto !important; }
     
-    /* Ícones de Categoria Redondos */
+    /* Ícones de Categoria */
     div[data-testid="stHorizontalBlock"] button { border-radius: 50% !important; width: 75px !important; height: 75px !important; padding: 0 !important; font-size: 35px !important; line-height: 1 !important; box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important; margin: 0 auto !important; display: flex !important; align-items: center !important; justify-content: center !important; }
     div[data-testid="stHorizontalBlock"] button[kind="primary"] { background-color: #FF8C00 !important; border: 2px solid #FF8C00 !important; color: #FFFF00 !important; text-shadow: 1px 1px 1px #333; }
     div[data-testid="stHorizontalBlock"] button[kind="secondary"] { background-color: white !important; border: 2px solid #FF8C00 !important; color: black !important; }
