@@ -39,6 +39,10 @@ def carregar_dados_planilha():
     df = pd.DataFrame()
     try:
         df = pd.read_csv(SHEET_URL)
+        
+        # Se a planilha estiver vazia ou com erro, força erro para usar o backup
+        if len(df) == 0: raise Exception("Planilha Vazia")
+
         if 'Agenda' not in df.columns: df['Agenda'] = ""
         df['Agenda'] = df['Agenda'].fillna("").astype(str)
         df['Agenda_Lista'] = df['Agenda'].apply(lambda x: [d.strip() for d in x.split(',')] if x.strip() != "" else [])
@@ -58,24 +62,63 @@ def carregar_dados_planilha():
         df['Medalhas'] = df['Nota'].apply(lambda x: ['🥇', '⚡'] if x >= 4.8 else [])
         
     except Exception:
-        # Backup simples caso falhe
-        data = {'Nome': ['João Silva (Backup)'], 'Categoria': ['Eletricista'], 'Whatsapp': ['555599999999'], 'Latitude': [-28.6592], 'Longitude': [-56.0020], 'Status': ['Disponível'], 'Nota': [5.0], 'Foto': ["https://cdn-icons-png.flaticon.com/512/3135/3135715.png"], 'Agenda_Lista': [[]], 'Medalhas': [['🥇']]}
+        # ==========================================================
+        # 🚨 BACKUP COMPLETO (27 PROFISSIONAIS FICTÍCIOS) 🚨
+        # ==========================================================
+        # st.warning("Usando banco de dados offline (Backup)") # Descomente se quiser ver o aviso
+        data = {
+            'Nome': [
+                'Carlos Eletro', 'João da Luz', 'Roberto Fios', 
+                'Paulo Pedreiro', 'Marcos Construção', 'Antônio Obras', 
+                'José Encanador', 'Luiz Vazamentos', 'Fernando Tubos', 
+                'Ana Clima', 'Geladao Refri', 'Frio Max', 
+                'Maria Gesso', 'Decora Gesso', 'Arte em Gesso', 
+                'Vidraçaria Luz', 'Pedro Vidros', 'Transparente Vidros', 
+                'Carlos Jardim', 'Verde Vida', 'Jardins & Cia', 
+                'Roberto Mármores', 'Pedra Fina', 'Granitos Sul',
+                'Severino Faz Tudo', 'Help Casa', 'SOS Reparos' # Serviços Gerais
+            ],
+            'Categoria': [
+                'Eletricista', 'Eletricista', 'Eletricista',
+                'Pedreiro', 'Pedreiro', 'Pedreiro',
+                'Encanador', 'Encanador', 'Encanador',
+                'Ar-Condicionado', 'Ar-Condicionado', 'Ar-Condicionado',
+                'Gesseiro', 'Gesseiro', 'Gesseiro',
+                'Vidraceiro', 'Vidraceiro', 'Vidraceiro',
+                'Jardineiro', 'Jardineiro', 'Jardineiro',
+                'Marmorista', 'Marmorista', 'Marmorista',
+                'Serviços Gerais', 'Serviços Gerais', 'Serviços Gerais'
+            ],
+            'Whatsapp': ['555599999999'] * 27,
+            'Latitude': [-28.6583, -28.6605, -28.6550, -28.6620, -28.6575, -28.6650, -28.6590, -28.6540, -28.6610, -28.6560, -28.6630, -28.6580, -28.6600, -28.6530, -28.6640, -28.6550, -28.6615, -28.6570, -28.6560, -28.6625, -28.6545, -28.6540, -28.6600, -28.6585, -28.6595, -28.6612, -28.6578],
+            'Longitude': [-56.0041, -56.0010, -56.0080, -56.0030, -55.9990, -56.0055, -56.0100, -56.0020, -56.0070, -56.0040, -56.0000, -56.0120, -56.0050, -55.9980, -56.0090, -56.0100, -56.0025, -56.0060, -56.0010, -56.0085, -56.0035, -56.0080, -55.9995, -56.0110, -56.0045, -56.0022, -56.0066],
+            'Status': ['Disponível'] * 27,
+            'Nota': [5.0] * 27,
+            'Foto': ["https://cdn-icons-png.flaticon.com/512/3135/3135715.png"] * 27,
+            'Agenda_Lista': [[] for _ in range(27)],
+            'Medalhas': [['🥇', '⚡']] * 27
+        }
         df = pd.DataFrame(data)
     return df
 
 def inicializar_session_state():
     if 'usuario' not in st.session_state: st.session_state['usuario'] = None
     if 'aceitou_termos' not in st.session_state: st.session_state['aceitou_termos'] = False
-    if 'mural_posts' not in st.session_state:
-        st.session_state['mural_posts'] = [{"id": 1, "autor": "Maria", "texto": "Olá!", "respostas": [], "denuncias": 0}]
     
-    # Carrega planilha APENAS UMA VEZ para não perder os cadastros temporários
+    # --- MURAL COM MENSAGENS FICTÍCIAS ---
+    if 'mural_posts' not in st.session_state:
+        st.session_state['mural_posts'] = [
+            {"id": 1, "autor": "Ana Silva", "texto": "Alguém indica um eletricista urgente para o bairro Centro?", "respostas": [], "denuncias": 0},
+            {"id": 2, "autor": "Marcos Oliveira", "texto": "Sobraram 2 sacos de cimento da minha obra. Vendo barato. Whatsapp: 55 99...", "respostas": [], "denuncias": 0},
+            {"id": 3, "autor": "Clara Souza", "texto": "Preciso de indicação de frete pequeno para geladeira.", "respostas": [], "denuncias": 0}
+        ]
+    
     if 'prestadores' not in st.session_state:
         st.session_state['prestadores'] = carregar_dados_planilha()
 
 inicializar_session_state()
 
-# --- 3. ESTILO VISUAL (CSS V50.0) ---
+# --- 3. ESTILO VISUAL (CSS V50.0 - ÍCONES REDONDOS) ---
 st.markdown("""
     <style>
     :root { color-scheme: light; }
@@ -98,29 +141,29 @@ st.markdown("""
     .stRadio label p { color: #FF8C00 !important; font-weight: bold !important; font-size: 18px !important; }
     div[role="radiogroup"] [aria-checked="true"] > div:first-child { background-color: #FF8C00 !important; border-color: #FF8C00 !important; }
 
-    /* BOTÕES DOS ÍCONES (MAIORES E REDONDOS) */
+    /* BOTÕES DOS ÍCONES (REDONDOS E GRANDES) */
     button[kind="primary"] {
         background-color: #FF8C00 !important; border: 1px solid #FF8C00 !important;
         color: white !important; 
-        border-radius: 15px !important; /* Retangular Arredondado */
+        border-radius: 50% !important; /* CÍRCULO PERFEITO */
         font-weight: bold !important; box-shadow: none !important;
-        width: 100% !important; height: 80px !important; /* MAIOR */
-        font-size: 32px !important; line-height: 1 !important;
+        width: 80px !important; height: 80px !important; 
+        font-size: 30px !important; line-height: 1 !important; padding: 0 !important;
     }
     
     button[kind="secondary"] {
-        border-radius: 15px !important; /* Retangular Arredondado */
+        border-radius: 50% !important; /* CÍRCULO PERFEITO */
         background-color: white !important; 
         border: 2px solid #FF8C00 !important; 
         color: black !important;
-        width: 100% !important; height: 80px !important; /* MAIOR */
-        font-size: 32px !important; line-height: 1 !important;
+        width: 80px !important; height: 80px !important; 
+        font-size: 30px !important; line-height: 1 !important; padding: 0 !important;
     }
 
     /* GRID DE 3 COLUNAS */
     div[data-testid="stHorizontalBlock"] {
-        display: grid !important; grid-template-columns: repeat(3, 1fr) !important; /* 3 COLUNAS */
-        gap: 10px !important; width: 100% !important; justify-items: center !important;
+        display: grid !important; grid-template-columns: repeat(3, 1fr) !important;
+        gap: 15px !important; width: 100% !important; justify-items: center !important;
     }
     div[data-testid="column"] {
         width: 100% !important; min-width: 0 !important; display: flex !important; flex-direction: column !important; align-items: center !important; padding: 0 !important;
@@ -170,7 +213,7 @@ def formulario_cadastro_prestador():
     st.markdown("### 📝 Cadastro de Prestador")
     st.info("Preencha todos os campos para ganhar destaque Ouro! 🥇")
     
-    # 1. Dados Pessoais (Obrigatórios)
+    # 1. Dados Pessoais
     nome_completo = st.text_input("Nome Completo (Obrigatório)")
     cpf = st.text_input("CPF (Somente números)", max_chars=11)
     
@@ -181,7 +224,6 @@ def formulario_cadastro_prestador():
     
     # 3. Avatar
     st.markdown("**Escolha sua Foto/Avatar:**")
-    # Opções de Avatar Fictício
     avatares = {
         "Homem Capacete": "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
         "Mulher Capacete": "https://cdn-icons-png.flaticon.com/512/3135/3135768.png",
@@ -203,7 +245,7 @@ def formulario_cadastro_prestador():
     
     if st.button("CONCLUIR CADASTRO", type="primary"):
         if nome_completo and whats and nome_exibicao and termos_resp:
-            # Lógica da Medalha: Se preencheu descrição e NF = Ganha Ouro
+            # Lógica da Medalha
             medalhas = []
             if descricao and nota_fiscal:
                 medalhas = ['🥇', '⚡']
@@ -221,11 +263,9 @@ def formulario_cadastro_prestador():
                 'Medalhas': medalhas
             }
             
-            # Adiciona ao topo da lista atual
             novo_df = pd.DataFrame([novo_prestador])
             st.session_state['prestadores'] = pd.concat([novo_df, st.session_state['prestadores']], ignore_index=True)
             
-            # Loga o usuário
             st.session_state['usuario'] = {
                 "nome": nome_exibicao,
                 "tipo": "Prestador de Serviços",
@@ -250,20 +290,14 @@ def tela_identificacao():
 
     st.markdown("### 👤 Quem é você?")
     
-    # Seletor de Avatar para Cliente
-    st.markdown("**Escolha seu Avatar:**")
-    cols_av = st.columns(6)
-    avatars_cliente = ["👨🏿", "👩🏼", "👴🏽", "👱🏻‍♀️", "🧔🏻", "👩🏾"]
-    avatar_escolhido = "👤"
-    # Simulação visual de escolha (simplificada para não complicar estado)
+    st.markdown("**Escolha seu Avatar (Cliente):**")
+    st.markdown("👨🏿 👩🏼 👴🏽 👱🏻‍♀️ 🧔🏻 👩🏾")
     
     nome = st.text_input("Seu Nome")
     
-    col_btn1, col_btn2 = st.columns(2)
-    with col_btn1:
-        if st.button("Sou Cliente", type="primary"):
-            st.session_state['usuario'] = {"nome": nome if nome else "Visitante", "tipo": "Cliente"}
-            st.rerun()
+    if st.button("Sou Cliente", type="primary"):
+        st.session_state['usuario'] = {"nome": nome if nome else "Visitante", "tipo": "Cliente"}
+        st.rerun()
             
     st.divider()
     st.markdown("##### Para Profissionais")
@@ -271,14 +305,12 @@ def tela_identificacao():
         st.session_state['tela_cadastro'] = True
         st.rerun()
     
-    # Atalho para quem já tem conta (simulado)
     if st.button("Já tenho cadastro (Entrar)", type="secondary"):
         st.session_state['usuario'] = {"nome": nome if nome else "Prestador", "tipo": "Prestador de Serviços"}
         st.rerun()
 
 def html_ofertas():
     html_content = ""
-    # OFERTAS
     for i in range(1, 6):
         if os.path.exists(f"oferta{i}.mp4"):
             b64 = get_media_base64(f"oferta{i}.mp4")
@@ -307,7 +339,6 @@ def html_parceiros_dinamico():
             html_content += f'<div class="oferta-item" style="width: 150px;"><img src="data:image/jpeg;base64,{b64}"></div>'
     
     if not html_content:
-        # Placeholder se não tiver nada
         html_content = '<div style="text-align:center; color:#999; width:100%;">Em breve</div>'
         
     return f"""<div class="ofertas-container" style="justify-content: center;">{html_content}</div>"""
@@ -356,7 +387,7 @@ def app_principal():
         c7, c8, c9 = st.columns(3)
         btn_cat(c7, "🌱", "Jardineiro", "Jardineiro")
         btn_cat(c8, "🪨", "Marmorista", "Marmorista")
-        btn_cat(c9, "🛠️", "Serv. Gerais", "Serviços Gerais") # NOVO
+        btn_cat(c9, "🛠️", "Serv. Gerais", "Serviços Gerais")
 
         ofertas_html = html_ofertas()
 
