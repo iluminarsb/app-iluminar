@@ -6,13 +6,110 @@ import os
 import base64
 import random
 
-# --- 1. CONFIGURAÇÃO INICIAL ---
+# --- 1. CONFIGURAÇÃO (CSS DA VERSÃO 70 TRAZIDO DE VOLTA) ---
 st.set_page_config(
     page_title="Iluminar Conecta", 
     page_icon="💡", 
     layout="centered",
     initial_sidebar_state="collapsed"
 )
+
+# --- CSS "NUCLEAR" DA VERSÃO 70 (QUE FUNCIONOU) ---
+st.markdown("""
+    <style>
+    /* Força o tema claro em todo o app */
+    :root { color-scheme: light; }
+    .stApp { background-color: #ffffff; color: #000000; }
+    
+    /* ============================================================
+       CORREÇÃO DOS BOTÕES PRETOS E CAMPOS DE TEXTO (V70)
+       ============================================================ */
+    
+    /* 1. Botões Gerais (Brancos com borda laranja e texto preto) */
+    div.stButton > button {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+        border: 1px solid #FF8C00 !important;
+        border-radius: 12px !important;
+        font-weight: bold !important;
+        width: 100%;
+        padding: 12px !important;
+        height: auto !important;
+    }
+    div.stButton > button:hover {
+        background-color: #f0f0f0 !important;
+        border-color: #e67e00 !important;
+        color: #000000 !important;
+    }
+
+    /* 2. Campos de Texto, Áreas de Texto e Selectbox */
+    /* Força fundo CLARO e texto PRETO, ignorando o modo noturno do celular */
+    input, textarea, select, 
+    .stTextInput input, .stTextArea textarea, 
+    div[data-baseweb="select"] > div, 
+    div[data-baseweb="base-input"], 
+    div[class*="stSelectbox"] div {
+        background-color: #f8f9fa !important; 
+        color: #000000 !important;
+        -webkit-text-fill-color: #000000 !important; /* Essencial para Safari/iOS */
+        caret-color: #000000 !important;
+        border-color: #ced4da !important;
+    }
+
+    /* Menu Suspenso (Dropdown) - Fundo branco */
+    ul[data-baseweb="menu"], div[data-baseweb="popover"], li[data-baseweb="option"] { 
+        background-color: #ffffff !important; 
+        color: #000000 !important; 
+    }
+    
+    /* Item selecionado no menu */
+    li[aria-selected="true"], li[data-baseweb="option"]:hover {
+        background-color: #e0e0e0 !important;
+        color: #000000 !important;
+    }
+
+    /* Texto placeholder (dica) */
+    ::placeholder { color: #666666 !important; opacity: 1; }
+
+    /* ============================================================ */
+
+    /* Ícones de Categoria (Redondos) */
+    div[data-testid="stHorizontalBlock"] button {
+        border-radius: 50% !important; 
+        width: 75px !important; 
+        height: 75px !important; 
+        padding: 0 !important; 
+        font-size: 35px !important;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+    }
+    div[data-testid="stHorizontalBlock"] button[kind="primary"] {
+        background-color: #FF8C00 !important;
+        border: 2px solid #FF8C00 !important;
+        color: #FFFF00 !important;
+    }
+    div[data-testid="stHorizontalBlock"] button[kind="secondary"] {
+        background-color: white !important;
+        color: black !important;
+    }
+
+    /* Outros Estilos */
+    .ofertas-container { display: flex; overflow-x: auto; gap: 15px; padding: 10px; padding-left: 5px; scrollbar-width: none; width: 100%; justify-content: flex-start; }
+    .oferta-item { flex: 0 0 auto; width: 85%; max-width: 320px; border-radius: 10px; overflow: hidden; border: 1px solid #eee; }
+    .oferta-item img, .oferta-item video { width: 100%; height: auto; display: block; }
+    div[data-baseweb="tab-list"] { display: flex; width: 100%; gap: 2px; }
+    button[data-baseweb="tab"] { flex-grow: 1 !important; border-radius: 10px 10px 0 0 !important; background-color: #f1f1f1 !important; border: none !important; color: #555 !important; font-size: 13px !important; padding: 10px 0 !important; }
+    button[aria-selected="true"] { background-color: #FF8C00 !important; color: white !important; }
+    .social-container { display: flex; justify-content: center; gap: 40px; margin-top: 15px; margin-bottom: 25px; width: 100%; }
+    .insta-original img { filter: grayscale(100%) brightness(0) !important; }
+    .btn-whatsapp { display: block; width: 100%; background-color: #25D366; color: white !important; text-align: center; padding: 10px; border-radius: 20px; text-decoration: none; font-weight: bold; font-size: 14px; margin-top: 5px; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+    .card-profissional { background-color: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 15px; border-left: 5px solid #FF8C00; width: 100%; }
+    .sticky-aviso { position: sticky; top: 0; z-index: 1000; background-color: #FF8C00; color: white !important; text-align: center; padding: 10px; font-weight: bold; font-size: 12px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 15px; }
+    .rotulo-icone { display: block; width: 100%; text-align: center; font-size: 11px; font-weight: bold; color: #444 !important; margin-top: 5px; line-height: 1.2; }
+    .box-termos { height: 150px; overflow-y: scroll; background-color: #f8f9fa; border: 1px solid #ced4da; padding: 10px; border-radius: 8px; font-size: 12px; color: #000 !important; margin-bottom: 15px; text-align: justify; }
+    div[data-testid="stHorizontalBlock"] { display: grid !important; grid-template-columns: repeat(3, 1fr) !important; gap: 10px !important; }
+    div[data-testid="column"] { min-width: 0 !important; }
+    </style>
+""", unsafe_allow_html=True)
 
 # ==============================================================================
 # 👇👇👇 LINK DA PLANILHA 👇👇👇
@@ -162,82 +259,6 @@ def inicializar_session_state():
         st.session_state['prestadores'] = carregar_dados_planilha()
 
 inicializar_session_state()
-
-# --- 3. ESTILO VISUAL (CSS V77.0 - ESTRATÉGIA CINZA CLARO "BOX-SHADOW HACK") ---
-st.markdown("""
-    <style>
-    :root { color-scheme: light; --light-gray-bg: #F0F2F5; }
-    .stApp { background-color: #ffffff; color: #000000; }
-    
-    /* ============================================================
-       TÉCNICA "BOX-SHADOW" PARA FORÇAR CINZA CLARO EM MOBILE
-       Isso força uma "tinta" cinza dentro do campo, que o modo escuro
-       tem mais dificuldade de inverter do que um fundo sólido normal.
-       ============================================================ */
-    
-    input, textarea, select, 
-    .stTextInput input, 
-    .stTextArea textarea, 
-    div[data-baseweb="select"] > div,
-    div[data-baseweb="base-input"] {
-        /* O TRUQUE: Sombra interna sólida na cor cinza claro */
-        box-shadow: 0 0 0 1000px var(--light-gray-bg) inset !important;
-        /* Garante o fundo também */
-        background-color: var(--light-gray-bg) !important;
-        /* Texto Preto Sólido */
-        color: #000000 !important;
-        -webkit-text-fill-color: #000000 !important; /* Para iPhone */
-        caret-color: #000000 !important; /* Cursor preto */
-        border: 1px solid #ced4da !important; /* Borda cinza visível */
-    }
-
-    /* Dropdowns (Menus) */
-    ul[data-baseweb="menu"], div[data-baseweb="popover"] {
-        background-color: var(--light-gray-bg) !important;
-    }
-    li[data-baseweb="option"] {
-        background-color: var(--light-gray-bg) !important;
-        color: #000000 !important;
-    }
-    /* Hover no menu */
-    li[aria-selected="true"], li[data-baseweb="option"]:hover {
-        background-color: #e0e0e0 !important; /* Cinza um pouco mais escuro ao passar o dedo */
-    }
-
-    /* Placeholders e Textos Gerais */
-    ::placeholder { color: #757575 !important; opacity: 1; }
-    p, label, h1, h2, h3, h4, h5, h6, .stMarkdown { color: #000000 !important; }
-
-    /* ============================================================ */
-
-    /* CARROSSEL */
-    .ofertas-container { display: flex; overflow-x: auto; gap: 15px; padding: 10px; padding-left: 5px; scrollbar-width: none; width: 100%; justify-content: flex-start; }
-    .oferta-item { flex: 0 0 auto; width: 85%; max-width: 320px; border-radius: 10px; overflow: hidden; border: 1px solid #eee; }
-    .oferta-item img, .oferta-item video { width: 100%; height: auto; display: block; }
-
-    /* ABAS */
-    div[data-baseweb="tab-list"] { display: flex; width: 100%; gap: 2px; }
-    button[data-baseweb="tab"] { flex-grow: 1 !important; border-radius: 10px 10px 0 0 !important; background-color: #f1f1f1 !important; border: none !important; color: #555 !important; font-size: 13px !important; padding: 10px 0 !important; }
-    button[aria-selected="true"] { background-color: #FF8C00 !important; color: white !important; }
-
-    /* GERAL */
-    .social-container { display: flex; justify-content: center; gap: 40px; margin-top: 15px; margin-bottom: 25px; width: 100%; }
-    .insta-original img { filter: grayscale(100%) brightness(0) !important; }
-    div[data-testid="column"] button { border-radius: 12px !important; width: 100% !important; border: 1px solid #FF8C00 !important; font-size: 16px !important; padding: 12px !important; height: auto !important; }
-    
-    div[data-testid="stHorizontalBlock"] button { border-radius: 50% !important; width: 75px !important; height: 75px !important; padding: 0 !important; font-size: 35px !important; line-height: 1 !important; box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important; margin: 0 auto !important; display: flex !important; align-items: center !important; justify-content: center !important; }
-    div[data-testid="stHorizontalBlock"] button[kind="primary"] { background-color: #FF8C00 !important; border: 2px solid #FF8C00 !important; color: #FFFF00 !important; text-shadow: 1px 1px 1px #333; }
-    div[data-testid="stHorizontalBlock"] button[kind="secondary"] { background-color: white !important; border: 2px solid #FF8C00 !important; color: black !important; }
-    
-    .btn-whatsapp { display: block; width: 100%; background-color: #25D366; color: white !important; text-align: center; padding: 10px; border-radius: 20px; text-decoration: none; font-weight: bold; font-size: 14px; margin-top: 5px; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-    .card-profissional { background-color: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 15px; border-left: 5px solid #FF8C00; width: 100%; }
-    .sticky-aviso { position: sticky; top: 0; z-index: 1000; background-color: #FF8C00; color: white !important; text-align: center; padding: 10px; font-weight: bold; font-size: 12px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 15px; }
-    .rotulo-icone { display: block; width: 100%; text-align: center; font-size: 11px; font-weight: bold; color: #444 !important; margin-top: 5px; line-height: 1.2; }
-    .box-termos { height: 150px; overflow-y: scroll; background-color: #f8f9fa; border: 1px solid #ced4da; padding: 10px; border-radius: 8px; font-size: 12px; color: #000 !important; margin-bottom: 15px; text-align: justify; }
-    div[data-testid="stHorizontalBlock"] { display: grid !important; grid-template-columns: repeat(3, 1fr) !important; gap: 10px !important; }
-    div[data-testid="column"] { min-width: 0 !important; }
-    </style>
-""", unsafe_allow_html=True)
 
 # --- 4. TELAS DO SISTEMA ---
 
