@@ -6,8 +6,13 @@ import os
 import base64
 import random
 
-# --- 1. CONFIGURAÇÃO ---
-st.set_page_config(page_title="Iluminar Conecta", page_icon="💡", layout="centered")
+# --- 1. CONFIGURAÇÃO (Forçando Tema Claro via Configuração) ---
+st.set_page_config(
+    page_title="Iluminar Conecta", 
+    page_icon="💡", 
+    layout="centered",
+    initial_sidebar_state="collapsed"
+)
 
 # ==============================================================================
 # 👇👇👇 LINK DA PLANILHA 👇👇👇
@@ -38,7 +43,7 @@ def definir_medalhas(row):
     if "flaticon" in foto or "avatar" in foto or foto == "" or "3135715" in foto:
         return ['🥈']
     else:
-        # Se for Foto Real = OURO (SEM RAIO)
+        # Se for Foto Real = OURO (SEM O RAIO, GARANTIDO)
         return ['🥇']
 
 def html_parceiros_dinamico():
@@ -82,6 +87,7 @@ def gerar_dados_ficticios_massivos():
             nome_completo = f"{nome_proprio} {random.choice(sobrenomes)}"
             status = "Disponível" if random.random() < 0.8 else "Ocupado"
             
+            # Foto Real vs Avatar
             if random.random() > 0.5:
                 foto = f"https://randomuser.me/api/portraits/{genero_foto}/{random.randint(1,99)}.jpg"
                 nf = True
@@ -103,12 +109,10 @@ def gerar_dados_ficticios_massivos():
     return df
 
 def carregar_dados_planilha():
-    # Esta função tenta ler a planilha. Se falhar ou estiver vazia, gera dados fictícios.
     df = pd.DataFrame()
     try:
         df = pd.read_csv(SHEET_URL)
         if len(df) == 0: raise Exception("Vazia")
-        
         df = df.loc[:,~df.columns.duplicated()]
         if 'Agenda' not in df.columns: df['Agenda'] = ""
         df['Agenda'] = df['Agenda'].fillna("").astype(str)
@@ -127,14 +131,12 @@ def carregar_dados_planilha():
         if 'NF' not in df.columns: df['NF'] = False
         else: df['NF'] = df['NF'].astype(bool)
         if 'Status' not in df.columns: df['Status'] = "Disponível"
-        
         def corrigir_foto(f):
             if pd.isna(f) or str(f).strip() == '' or str(f).lower() == 'avatar': return "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
             return f 
         df['Foto'] = df['Foto'].apply(corrigir_foto)
         df['Medalhas'] = df.apply(definir_medalhas, axis=1)
     except Exception:
-        # Se a planilha falhar, usa os dados fictícios
         df = gerar_dados_ficticios_massivos()
     return df
 
@@ -142,7 +144,10 @@ def inicializar_session_state():
     if 'usuario' not in st.session_state: st.session_state['usuario'] = None
     if 'aceitou_termos' not in st.session_state: st.session_state['aceitou_termos'] = False
     
-    # --- MURAL FIXO ---
+    # LIMPA DADOS ANTIGOS PARA REMOVER O RAIO DO CACHE
+    if 'prestadores' in st.session_state:
+        del st.session_state['prestadores']
+
     if 'mural_posts' not in st.session_state:
         comentarios = [
             ("Ana Silva", "women/44.jpg", "Alguém indica um eletricista urgente?"),
@@ -163,70 +168,99 @@ def inicializar_session_state():
             posts.append({"id": i, "autor": nome, "avatar": f"https://randomuser.me/api/portraits/{img}", "texto": texto, "respostas": [], "denuncias": 0})
         st.session_state['mural_posts'] = posts
         
-    # --- PRESTADORES FIXOS (SÓ GERA UMA VEZ) ---
     if 'prestadores' not in st.session_state:
-        # Carrega e salva na memória para não mudar ao clicar
         st.session_state['prestadores'] = carregar_dados_planilha()
 
 inicializar_session_state()
 
-# --- 3. ESTILO VISUAL (CSS V69.0 - BLOQUEIO DE TEMA ESCURO) ---
+# --- 3. ESTILO VISUAL (CSS V70.0 - ANTI-DARK MODE NUCLEAR) ---
 st.markdown("""
     <style>
+    /* Força o tema claro em todo o app */
     :root { color-scheme: light; }
     .stApp { background-color: #ffffff; color: #000000; }
     .block-container { padding: 1rem; padding-bottom: 5rem; }
 
-    /* --- SOLUÇÃO NUCLEAR PARA CAMPOS PRETOS --- */
-    /* Força fundo branco e texto preto em TODOS os inputs, ignorando tema do celular */
+    /* ============================================================
+       CORREÇÃO DOS BOTÕES PRETOS E CAMPOS DE TEXTO
+       ============================================================ */
+    
+    /* 1. Botões Gerais (Brancos com borda laranja e texto preto) */
+    div.stButton > button {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+        border: 1px solid #FF8C00 !important;
+        border-radius: 12px !important;
+        font-weight: bold !important;
+        width: 100%;
+        padding: 12px !important;
+        height: auto !important;
+    }
+    div.stButton > button:hover {
+        background-color: #f0f0f0 !important;
+        border-color: #e67e00 !important;
+        color: #000000 !important;
+    }
+
+    /* 2. Campos de Texto, Áreas de Texto e Selectbox */
+    /* Força fundo CLARO e texto PRETO, ignorando o modo noturno do celular */
     input, textarea, select, 
     .stTextInput input, .stTextArea textarea, 
     div[data-baseweb="select"] > div, 
     div[data-baseweb="base-input"], 
     div[class*="stSelectbox"] div {
-        background-color: #f8f9fa !important;
+        background-color: #f8f9fa !important; 
         color: #000000 !important;
-        -webkit-text-fill-color: #000000 !important; /* Para Safari/iPhone */
+        -webkit-text-fill-color: #000000 !important; /* Essencial para Safari/iOS */
         caret-color: #000000 !important;
         border-color: #ced4da !important;
     }
+
+    /* Menu Suspenso (Dropdown) - Fundo branco */
+    ul[data-baseweb="menu"], div[data-baseweb="popover"], li[data-baseweb="option"] { 
+        background-color: #ffffff !important; 
+        color: #000000 !important; 
+    }
     
-    /* Garante que o menu suspenso (opções) seja branco */
-    div[data-baseweb="popover"], ul[data-baseweb="menu"] {
-        background-color: #ffffff !important;
-    }
-    li[data-baseweb="option"] {
-        color: #000000 !important;
-        background-color: #ffffff !important;
-    }
-    /* Item selecionado ou hover no menu */
+    /* Item selecionado no menu */
     li[aria-selected="true"], li[data-baseweb="option"]:hover {
-        background-color: #f0f0f0 !important;
-        color: #000000 !important;
-    }
-    
-    /* Texto dentro do select quando fechado */
-    div[data-baseweb="select"] span {
+        background-color: #e0e0e0 !important;
         color: #000000 !important;
     }
 
-    /* CARROSSEL */
+    /* Texto placeholder (dica) */
+    ::placeholder { color: #666666 !important; opacity: 1; }
+
+    /* ============================================================ */
+
+    /* Ícones de Categoria (Redondos) - Sobrescreve a regra geral de botões acima */
+    div[data-testid="stHorizontalBlock"] button {
+        border-radius: 50% !important; 
+        width: 75px !important; 
+        height: 75px !important; 
+        padding: 0 !important; 
+        font-size: 35px !important;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+    }
+    div[data-testid="stHorizontalBlock"] button[kind="primary"] {
+        background-color: #FF8C00 !important;
+        border: 2px solid #FF8C00 !important;
+        color: #FFFF00 !important;
+    }
+    div[data-testid="stHorizontalBlock"] button[kind="secondary"] {
+        background-color: white !important;
+        color: black !important;
+    }
+
+    /* Outros Estilos */
     .ofertas-container { display: flex; overflow-x: auto; gap: 15px; padding: 10px; padding-left: 5px; scrollbar-width: none; width: 100%; justify-content: flex-start; }
     .oferta-item { flex: 0 0 auto; width: 85%; max-width: 320px; border-radius: 10px; overflow: hidden; border: 1px solid #eee; }
     .oferta-item img, .oferta-item video { width: 100%; height: auto; display: block; }
-
-    /* ABAS */
     div[data-baseweb="tab-list"] { display: flex; width: 100%; gap: 2px; }
     button[data-baseweb="tab"] { flex-grow: 1 !important; border-radius: 10px 10px 0 0 !important; background-color: #f1f1f1 !important; border: none !important; color: #555 !important; font-size: 13px !important; padding: 10px 0 !important; }
     button[aria-selected="true"] { background-color: #FF8C00 !important; color: white !important; }
-
-    /* GERAL */
     .social-container { display: flex; justify-content: center; gap: 40px; margin-top: 15px; margin-bottom: 25px; width: 100%; }
     .insta-original img { filter: grayscale(100%) brightness(0) !important; }
-    div[data-testid="column"] button { border-radius: 12px !important; width: 100% !important; border: 1px solid #FF8C00 !important; font-size: 16px !important; padding: 12px !important; height: auto !important; }
-    div[data-testid="stHorizontalBlock"] button { border-radius: 50% !important; width: 75px !important; height: 75px !important; padding: 0 !important; font-size: 35px !important; line-height: 1 !important; box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important; margin: 0 auto !important; display: flex !important; align-items: center !important; justify-content: center !important; }
-    div[data-testid="stHorizontalBlock"] button[kind="primary"] { background-color: #FF8C00 !important; border: 2px solid #FF8C00 !important; color: #FFFF00 !important; text-shadow: 1px 1px 1px #333; }
-    div[data-testid="stHorizontalBlock"] button[kind="secondary"] { background-color: white !important; border: 2px solid #FF8C00 !important; color: black !important; }
     .btn-whatsapp { display: block; width: 100%; background-color: #25D366; color: white !important; text-align: center; padding: 10px; border-radius: 20px; text-decoration: none; font-weight: bold; font-size: 14px; margin-top: 5px; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
     .card-profissional { background-color: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 15px; border-left: 5px solid #FF8C00; width: 100%; }
     .sticky-aviso { position: sticky; top: 0; z-index: 1000; background-color: #FF8C00; color: white !important; text-align: center; padding: 10px; font-weight: bold; font-size: 12px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 15px; }
@@ -249,7 +283,7 @@ def tela_termos():
     st.write("")
     aceite = st.checkbox("Li os termos de uso, concordo e aceito.")
     if aceite:
-        if st.button("AVANÇAR", type="primary"): 
+        if st.button("AVANÇAR"): 
             st.session_state['aceitou_termos'] = True
             st.rerun()
 
@@ -275,7 +309,7 @@ def formulario_cadastro_prestador():
         st.warning("Avatar selecionado (Medalha de Prata).")
         medalhas_temp = ['🥈']
     nf = st.checkbox("Emito NF")
-    if st.button("CONCLUIR CADASTRO", type="primary"):
+    if st.button("CONCLUIR CADASTRO"):
         if nome_completo and whats:
             novo = {'Nome': nome_exibicao, 'Categoria': categoria, 'Whatsapp': whats, 'Latitude': -28.6592, 'Longitude': -56.0020, 'Status': 'Disponível', 'Nota': 5.0, 'Foto': foto_final, 'Agenda_Lista': [], 'Medalhas': medalhas_temp, 'NF': nf}
             df_novo = pd.DataFrame([novo])
@@ -297,7 +331,8 @@ def tela_identificacao():
     up = st.file_uploader("Foto (Opcional)", type=['jpg', 'png'])
     if up: st.caption("Nota: Foto simulada para teste.")
     avatar = "https://randomuser.me/api/portraits/women/88.jpg" if up else "https://cdn-icons-png.flaticon.com/512/1077/1077114.png"
-    if st.button("Sou Cliente (Entrar)", type="primary"):
+    
+    if st.button("Sou Cliente (Entrar)"):
         st.session_state['usuario'] = {"nome": nome if nome else "Visitante", "tipo": "Cliente", "foto": avatar}
         st.rerun()
     st.divider()
@@ -305,7 +340,7 @@ def tela_identificacao():
     if st.button("Quero me cadastrar como Prestador"):
         st.session_state['tela_cadastro'] = True
         st.rerun()
-    if st.button("Já tenho cadastro (Entrar)", type="secondary"):
+    if st.button("Já tenho cadastro (Entrar)"):
         st.session_state['usuario'] = {"nome": "Prestador", "tipo": "Prestador de Serviços"}
         st.rerun()
 
