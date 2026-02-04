@@ -35,6 +35,15 @@ def gerar_estrelas_html(nota):
     estrelas = "★" * n_cheias + "☆" * n_vazias
     return f'<span style="color: #FF8C00; font-size: 15px; letter-spacing: 1px;">{estrelas}</span> <span style="font-size: 11px; color: #666; font-weight: bold;">{nota}</span>'
 
+def definir_medalhas(row):
+    """Define medalha baseado na foto: Avatar=Prata, Foto Real=Ouro"""
+    foto = str(row['Foto']).lower()
+    # Se for avatar padrão (flaticon) ou vazio -> Prata
+    if "flaticon" in foto or "avatar" in foto or foto == "":
+        return ['🥈'] # Prata
+    else:
+        return ['🥇', '⚡'] # Ouro + Raio
+
 def carregar_dados_planilha():
     df = pd.DataFrame()
     try:
@@ -57,7 +66,8 @@ def carregar_dados_planilha():
         if 'Foto' in df.columns: df['Foto'] = df['Foto'].apply(corrigir_foto)
         else: df['Foto'] = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
 
-        df['Medalhas'] = df['Nota'].apply(lambda x: ['🥇', '⚡'] if x >= 4.8 else [])
+        # Aplica a lógica de medalhas na Planilha Real
+        df['Medalhas'] = df.apply(definir_medalhas, axis=1)
         
     except Exception:
         # BACKUP COMPLETO (27 PROFISSIONAIS)
@@ -89,18 +99,20 @@ def carregar_dados_planilha():
             'Longitude': [-56.0041, -56.0010, -56.0080, -56.0030, -55.9990, -56.0055, -56.0100, -56.0020, -56.0070, -56.0040, -56.0000, -56.0120, -56.0050, -55.9980, -56.0090, -56.0100, -56.0025, -56.0060, -56.0010, -56.0085, -56.0035, -56.0080, -55.9995, -56.0110, -56.0045, -56.0022, -56.0066],
             'Status': ['Disponível'] * 27,
             'Nota': [5.0] * 27,
-            'Foto': ["https://cdn-icons-png.flaticon.com/512/3135/3135715.png"] * 27,
-            'Agenda_Lista': [[] for _ in range(27)],
-            'Medalhas': [['🥇', '⚡']] * 27
+            'Foto': ["https://cdn-icons-png.flaticon.com/512/3135/3135715.png"] * 27, # AVATARES
+            'Agenda_Lista': [[] for _ in range(27)]
         }
         df = pd.DataFrame(data)
+        # Aplica a lógica de medalhas no Backup também
+        df['Medalhas'] = df.apply(definir_medalhas, axis=1)
+        
     return df
 
 def inicializar_session_state():
     if 'usuario' not in st.session_state: st.session_state['usuario'] = None
     if 'aceitou_termos' not in st.session_state: st.session_state['aceitou_termos'] = False
     
-    # --- MURAL COM FOTOS REALISTAS (URLs públicas) ---
+    # --- MURAL COM FOTOS DE CLIENTES REAIS (URLs aleatórias) ---
     if 'mural_posts' not in st.session_state:
         st.session_state['mural_posts'] = [
             {"id": 1, "autor": "Ana Silva", "avatar": "https://randomuser.me/api/portraits/women/44.jpg", "texto": "Alguém indica um eletricista urgente para o bairro Centro? Minha luz caiu.", "respostas": [], "denuncias": 0},
@@ -108,7 +120,9 @@ def inicializar_session_state():
             {"id": 3, "autor": "Clara Souza", "avatar": "https://randomuser.me/api/portraits/women/68.jpg", "texto": "Preciso de indicação de frete pequeno para levar uma geladeira até o Pirahy.", "respostas": [], "denuncias": 0},
             {"id": 4, "autor": "Roberto Santos", "avatar": "https://randomuser.me/api/portraits/men/85.jpg", "texto": "Procuro pedreiro para pequena reforma no banheiro. Orçamento sem compromisso.", "respostas": [], "denuncias": 0},
             {"id": 5, "autor": "Luciana Ferreira", "avatar": "https://randomuser.me/api/portraits/women/12.jpg", "texto": "Alguém conhece um bom jardineiro para poda de árvore grande?", "respostas": [], "denuncias": 0},
-            {"id": 6, "autor": "Ricardo Gomes", "avatar": "https://randomuser.me/api/portraits/men/11.jpg", "texto": "Instalador de ar condicionado disponível para sábado?", "respostas": [], "denuncias": 0}
+            {"id": 6, "autor": "Ricardo Gomes", "avatar": "https://randomuser.me/api/portraits/men/11.jpg", "texto": "Instalador de ar condicionado disponível para sábado?", "respostas": [], "denuncias": 0},
+            {"id": 7, "autor": "Fernanda Lima", "avatar": "https://randomuser.me/api/portraits/women/90.jpg", "texto": "Bom dia! Alguém sabe quem faz limpeza de caixa d'água?", "respostas": [], "denuncias": 0},
+            {"id": 8, "autor": "Paulo Ricardo", "avatar": "https://randomuser.me/api/portraits/men/45.jpg", "texto": "Preciso de um vidraceiro para trocar uma janela quebrada.", "respostas": [], "denuncias": 0}
         ]
     
     if 'prestadores' not in st.session_state:
@@ -116,7 +130,7 @@ def inicializar_session_state():
 
 inicializar_session_state()
 
-# --- 3. ESTILO VISUAL (CSS V52.0 - CÍRCULOS PERFEITOS) ---
+# --- 3. ESTILO VISUAL (CSS V53.0 - CORREÇÕES FINAIS) ---
 st.markdown("""
     <style>
     :root { color-scheme: light; }
@@ -140,6 +154,7 @@ st.markdown("""
     div[role="radiogroup"] [aria-checked="true"] > div:first-child { background-color: #FF8C00 !important; border-color: #FF8C00 !important; }
 
     /* BOTÕES DOS ÍCONES (CÍRCULOS PERFEITOS) */
+    /* Botão SELECIONADO: Laranja com Texto Branco e Sombra no Ícone */
     button[kind="primary"] {
         background-color: #FF8C00 !important; border: 1px solid #FF8C00 !important;
         color: white !important; 
@@ -147,6 +162,7 @@ st.markdown("""
         font-weight: bold !important; box-shadow: none !important;
         width: 80px !important; height: 80px !important; 
         font-size: 30px !important; line-height: 1 !important; padding: 0 !important;
+        text-shadow: 0px 0px 3px #000000; /* SOMBRA PARA DESTACAR O ÍCONE AMARELO */
     }
     
     button[kind="secondary"] {
@@ -240,7 +256,7 @@ def formulario_cadastro_prestador():
             st.warning("Aguardando envio da foto para validar Medalha de Ouro.")
     else:
         st.warning("⚠️ Nota: Cadastros com Avatar recebem Medalha de Prata. Envie uma foto real para ganhar Ouro.")
-        medalhas_temp = ['🥈', '⚡']
+        medalhas_temp = ['🥈']
         avatares = {
             "Homem Capacete": "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
             "Mulher Capacete": "https://cdn-icons-png.flaticon.com/512/3135/3135768.png"
@@ -420,8 +436,8 @@ def app_principal():
             st.write(f"Encontrados: **{len(df_filtrado)} profissionais**")
             
             for i, row in df_filtrado.iterrows():
-                lista_medalhas = row['Medalhas'] if 'Medalhas' in row else []
-                if not isinstance(lista_medalhas, list): lista_medalhas = []
+                # Força a lista de medalhas a ser uma lista válida
+                lista_medalhas = row['Medalhas'] if isinstance(row['Medalhas'], list) else []
                 medalhas = " ".join(lista_medalhas)
                 estrelas_html = gerar_estrelas_html(row['Nota'])
                 
@@ -473,12 +489,8 @@ def app_principal():
 
     with aba3:
         st.markdown("### 💬 Mural")
-        with st.form("novo_post"):
-            texto_post = st.text_area("O que você precisa?", max_chars=300)
-            if st.form_submit_button("Publicar", type="secondary"):
-                st.success("Publicado!")
-        st.divider()
-        # MURAL COM FOTOS REALISTAS
+        
+        # MOSTRA OS POSTS PRIMEIRO (Para a barra ficar em baixo)
         for post in st.session_state['mural_posts']:
             st.markdown(f"""
             <div class="post-mural" style="margin-bottom: 15px; padding: 10px; background-color: #f8f9fa; border-radius: 10px; border: 1px solid #eee;">
@@ -489,6 +501,14 @@ def app_principal():
                 <div class="post-texto" style="font-size: 14px; color: #333; padding-left: 45px;">{post['texto']}</div>
             </div>
             """, unsafe_allow_html=True)
+            
+        st.divider()
+        st.markdown("##### ✏️ Nova Mensagem")
+        # BARRA DE MENSAGEM NO FINAL
+        with st.form("novo_post"):
+            texto_post = st.text_area("O que você precisa?", max_chars=300)
+            if st.form_submit_button("Publicar", type="secondary"):
+                st.success("Publicado!")
 
     with aba4:
         st.markdown("### 🤝 Parceiros")
@@ -503,7 +523,6 @@ def app_principal():
         if usuario['tipo'] == 'Prestador de Serviços':
             st.divider()
             
-            # MOSTRA A MEDALHA ATUAL DO PRESTADOR
             medalhas_usr = usuario.get('medalhas', [])
             if '🥇' in medalhas_usr:
                 st.success("🏆 Você possui Medalha de Ouro! (Foto Real validada)")
