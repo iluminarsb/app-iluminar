@@ -40,7 +40,6 @@ def carregar_dados_planilha():
     try:
         df = pd.read_csv(SHEET_URL)
         
-        # Se a planilha estiver vazia ou com erro, força erro para usar o backup
         if len(df) == 0: raise Exception("Planilha Vazia")
 
         if 'Agenda' not in df.columns: df['Agenda'] = ""
@@ -62,10 +61,7 @@ def carregar_dados_planilha():
         df['Medalhas'] = df['Nota'].apply(lambda x: ['🥇', '⚡'] if x >= 4.8 else [])
         
     except Exception:
-        # ==========================================================
-        # 🚨 BACKUP COMPLETO (27 PROFISSIONAIS FICTÍCIOS) 🚨
-        # ==========================================================
-        # st.warning("Usando banco de dados offline (Backup)") # Descomente se quiser ver o aviso
+        # BACKUP COMPLETO (27 PROFISSIONAIS)
         data = {
             'Nome': [
                 'Carlos Eletro', 'João da Luz', 'Roberto Fios', 
@@ -76,7 +72,7 @@ def carregar_dados_planilha():
                 'Vidraçaria Luz', 'Pedro Vidros', 'Transparente Vidros', 
                 'Carlos Jardim', 'Verde Vida', 'Jardins & Cia', 
                 'Roberto Mármores', 'Pedra Fina', 'Granitos Sul',
-                'Severino Faz Tudo', 'Help Casa', 'SOS Reparos' # Serviços Gerais
+                'Severino Faz Tudo', 'Help Casa', 'SOS Reparos'
             ],
             'Categoria': [
                 'Eletricista', 'Eletricista', 'Eletricista',
@@ -105,12 +101,14 @@ def inicializar_session_state():
     if 'usuario' not in st.session_state: st.session_state['usuario'] = None
     if 'aceitou_termos' not in st.session_state: st.session_state['aceitou_termos'] = False
     
-    # --- MURAL COM MENSAGENS FICTÍCIAS ---
+    # --- MURAL COM MENSAGENS E FOTOS FICTÍCIAS (AVATARES) ---
     if 'mural_posts' not in st.session_state:
         st.session_state['mural_posts'] = [
-            {"id": 1, "autor": "Ana Silva", "texto": "Alguém indica um eletricista urgente para o bairro Centro?", "respostas": [], "denuncias": 0},
-            {"id": 2, "autor": "Marcos Oliveira", "texto": "Sobraram 2 sacos de cimento da minha obra. Vendo barato. Whatsapp: 55 99...", "respostas": [], "denuncias": 0},
-            {"id": 3, "autor": "Clara Souza", "texto": "Preciso de indicação de frete pequeno para geladeira.", "respostas": [], "denuncias": 0}
+            {"id": 1, "autor": "Ana Silva", "avatar": "https://cdn-icons-png.flaticon.com/512/4128/4128244.png", "texto": "Alguém indica um eletricista urgente para o bairro Centro? Minha luz caiu.", "respostas": [], "denuncias": 0},
+            {"id": 2, "autor": "Marcos Oliveira", "avatar": "https://cdn-icons-png.flaticon.com/512/4128/4128176.png", "texto": "Sobraram 2 sacos de cimento da minha obra. Vendo barato. Whatsapp: 55 99...", "respostas": [], "denuncias": 0},
+            {"id": 3, "autor": "Clara Souza", "avatar": "https://cdn-icons-png.flaticon.com/512/4128/4128359.png", "texto": "Preciso de indicação de frete pequeno para levar uma geladeira até o Pirahy.", "respostas": [], "denuncias": 0},
+            {"id": 4, "autor": "Roberto Santos", "avatar": "https://cdn-icons-png.flaticon.com/512/4128/4128262.png", "texto": "Procuro pedreiro para pequena reforma no banheiro. Orçamento sem compromisso.", "respostas": [], "denuncias": 0},
+            {"id": 5, "autor": "Luciana Ferreira", "avatar": "https://cdn-icons-png.flaticon.com/512/4128/4128409.png", "texto": "Alguém conhece um bom jardineiro para poda de árvore grande?", "respostas": [], "denuncias": 0}
         ]
     
     if 'prestadores' not in st.session_state:
@@ -118,7 +116,7 @@ def inicializar_session_state():
 
 inicializar_session_state()
 
-# --- 3. ESTILO VISUAL (CSS V50.0 - ÍCONES REDONDOS) ---
+# --- 3. ESTILO VISUAL (CSS V51.0 - ÍCONES RETANGULARES ARREDONDADOS) ---
 st.markdown("""
     <style>
     :root { color-scheme: light; }
@@ -141,29 +139,30 @@ st.markdown("""
     .stRadio label p { color: #FF8C00 !important; font-weight: bold !important; font-size: 18px !important; }
     div[role="radiogroup"] [aria-checked="true"] > div:first-child { background-color: #FF8C00 !important; border-color: #FF8C00 !important; }
 
-    /* BOTÕES DOS ÍCONES (REDONDOS E GRANDES) */
+    /* BOTÕES DOS ÍCONES (RETANGULARES ARREDONDADOS - ESTILO IMAGEM 1) */
     button[kind="primary"] {
         background-color: #FF8C00 !important; border: 1px solid #FF8C00 !important;
         color: white !important; 
-        border-radius: 50% !important; /* CÍRCULO PERFEITO */
+        border-radius: 15px !important; /* Retângulo Arredondado */
         font-weight: bold !important; box-shadow: none !important;
-        width: 80px !important; height: 80px !important; 
-        font-size: 30px !important; line-height: 1 !important; padding: 0 !important;
+        width: auto !important; height: auto !important; padding: 10px 15px !important;
+        font-size: 28px !important; line-height: 1.1 !important;
     }
     
     button[kind="secondary"] {
-        border-radius: 50% !important; /* CÍRCULO PERFEITO */
+        border-radius: 15px !important; /* Retângulo Arredondado */
         background-color: white !important; 
         border: 2px solid #FF8C00 !important; 
         color: black !important;
-        width: 80px !important; height: 80px !important; 
-        font-size: 30px !important; line-height: 1 !important; padding: 0 !important;
+        padding: 10px 15px !important; margin: 0 auto !important; display: block !important;
+        line-height: 1.1 !important; box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+        width: auto !important; height: auto !important; font-size: 28px !important;
     }
 
     /* GRID DE 3 COLUNAS */
     div[data-testid="stHorizontalBlock"] {
         display: grid !important; grid-template-columns: repeat(3, 1fr) !important;
-        gap: 15px !important; width: 100% !important; justify-items: center !important;
+        gap: 10px !important; width: 100% !important; justify-items: center !important;
     }
     div[data-testid="column"] {
         width: 100% !important; min-width: 0 !important; display: flex !important; flex-direction: column !important; align-items: center !important; padding: 0 !important;
@@ -245,7 +244,6 @@ def formulario_cadastro_prestador():
     
     if st.button("CONCLUIR CADASTRO", type="primary"):
         if nome_completo and whats and nome_exibicao and termos_resp:
-            # Lógica da Medalha
             medalhas = []
             if descricao and nota_fiscal:
                 medalhas = ['🥇', '⚡']
@@ -254,7 +252,7 @@ def formulario_cadastro_prestador():
                 'Nome': nome_exibicao,
                 'Categoria': categoria,
                 'Whatsapp': whats,
-                'Latitude': -28.6592, # Localização fictícia centro
+                'Latitude': -28.6592,
                 'Longitude': -56.0020,
                 'Status': 'Disponível',
                 'Nota': 5.0,
@@ -325,7 +323,6 @@ def html_ofertas():
 
 def html_parceiros_dinamico():
     html_content = ""
-    # PARCEIROS (MP4, GIF ou JPG)
     for i in range(1, 6):
         nome_base = f"parceiro{i}"
         if os.path.exists(f"{nome_base}.mp4"):
@@ -463,8 +460,17 @@ def app_principal():
             if st.form_submit_button("Publicar", type="secondary"):
                 st.success("Publicado!")
         st.divider()
+        # MURAL COM AVATARES (FOTOS)
         for post in st.session_state['mural_posts']:
-            st.markdown(f"""<div class="post-mural"><div class="post-header">👤 {post['autor']}</div><div class="post-texto">{post['texto']}</div></div>""", unsafe_allow_html=True)
+            st.markdown(f"""
+            <div class="post-mural" style="margin-bottom: 15px; padding: 10px; background-color: #f8f9fa; border-radius: 10px; border: 1px solid #eee;">
+                <div class="post-header" style="display: flex; align-items: center; margin-bottom: 5px; font-weight: bold; color: #FF8C00;">
+                    <img src="{post['avatar']}" style="width: 35px; height: 35px; border-radius: 50%; margin-right: 10px; border: 1px solid #ccc;">
+                    {post['autor']}
+                </div>
+                <div class="post-texto" style="font-size: 14px; color: #333; padding-left: 45px;">{post['texto']}</div>
+            </div>
+            """, unsafe_allow_html=True)
 
     with aba4:
         st.markdown("### 🤝 Parceiros")
