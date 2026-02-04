@@ -19,7 +19,7 @@ st.set_page_config(
 SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQebfRxbrTKHczD0zyzThfru67dqKpCbREHoDjZUPAQYY9OQdzEmxCewcxAdtuLc4Upef5UYdMRE2OD/pub?output=csv"
 # ==============================================================================
 
-# --- 2. FUNÇÕES (DEFINIDAS NO TOPO) ---
+# --- 2. FUNÇÕES ---
 def get_media_base64(file_path):
     if os.path.exists(file_path):
         with open(file_path, "rb") as f:
@@ -62,7 +62,6 @@ def html_parceiros_dinamico():
     return f"""<div class="ofertas-container">{html_content}</div>"""
 
 def gerar_dados_ficticios_massivos():
-    """Gera 10 profissionais por categoria"""
     categorias = [
         "Eletricista", "Pedreiro(a)", "Encanador(a)", "Ar-Condicionado", 
         "Gesseiro(a)", "Vidraceiro(a)", "Jardineiro(a)", "Marmorista", "Serviços Gerais"
@@ -164,47 +163,51 @@ def inicializar_session_state():
 
 inicializar_session_state()
 
-# --- 3. ESTILO VISUAL (CSS V75.0 - MODO CINZA CLARO FORÇADO) ---
+# --- 3. ESTILO VISUAL (CSS V76.0 - SOLUÇÃO FINAL DE COR) ---
 st.markdown("""
     <style>
-    :root { color-scheme: light; }
-    .stApp { background-color: #ffffff; color: #000000; }
+    /* 1. COMANDO MESTRE: Diz ao navegador que o site é APENAS claro */
+    :root {
+        color-scheme: light only !important;
+    }
     
-    /* ============================================================
-       FORÇAR FUNDO CINZA CLARO NOS INPUTS (SOLUÇÃO DO USUÁRIO)
-       ============================================================ */
+    .stApp {
+        background-color: #ffffff; 
+        color: #000000;
+    }
     
-    /* Define a cor cinza claro */
-    :root { --input-gray: #ECEFF1; }
-
-    /* Aplica o cinza claro e texto preto a TODOS os inputs e containers */
-    input, textarea, select, 
+    /* 2. FORÇA BRUTA EM INPUTS */
+    /* Target específico para Streamlit widgets */
     .stTextInput input, 
     .stTextArea textarea, 
-    div[data-baseweb="select"] div,
-    div[data-baseweb="base-input"],
-    .stSelectbox div {
-        background-color: var(--input-gray) !important;
-        color: #000000 !important;
-        caret-color: #000000 !important;
-        border: 1px solid #ced4da !important;
-        -webkit-text-fill-color: #000000 !important;
-        border-radius: 8px !important;
+    .stSelectbox div[data-baseweb="select"] > div,
+    input[type="text"],
+    textarea {
+        background-color: #ffffff !important; /* Fundo Branco Sólido */
+        color: #000000 !important; /* Texto Preto Sólido */
+        border: 1px solid #cccccc !important; /* Borda visível */
+        -webkit-text-fill-color: #000000 !important; /* Safari */
+        caret-color: #000000 !important; /* Cursor preto */
     }
 
-    /* Menus Suspensos (Opções) também em cinza claro */
-    div[data-baseweb="popover"], ul[data-baseweb="menu"], li[data-baseweb="option"] {
-        background-color: var(--input-gray) !important;
+    /* 3. MENU SUSPENSO (Dropdown) */
+    ul[data-baseweb="menu"] {
+        background-color: #ffffff !important;
+    }
+    li[data-baseweb="option"] {
+        color: #000000 !important;
+        background-color: #ffffff !important;
+    }
+    /* Item selecionado */
+    li[aria-selected="true"], li[data-baseweb="option"]:hover {
+        background-color: #ffe0b2 !important; /* Laranja claro */
         color: #000000 !important;
     }
     
-    /* Hover e Seleção no menu */
-    li[data-baseweb="option"]:hover, li[aria-selected="true"] {
-        background-color: #CFD8DC !important; /* Um cinza um pouco mais escuro no hover */
+    /* 4. TEXTOS */
+    p, label, h1, h2, h3, h4, h5, h6, .stMarkdown {
+        color: #000000 !important;
     }
-    
-    /* Placeholders */
-    ::placeholder { color: #666666 !important; opacity: 1; }
 
     /* ============================================================ */
 
@@ -223,7 +226,6 @@ st.markdown("""
     .insta-original img { filter: grayscale(100%) brightness(0) !important; }
     div[data-testid="column"] button { border-radius: 12px !important; width: 100% !important; border: 1px solid #FF8C00 !important; font-size: 16px !important; padding: 12px !important; height: auto !important; }
     
-    /* Ícones de Categoria */
     div[data-testid="stHorizontalBlock"] button { border-radius: 50% !important; width: 75px !important; height: 75px !important; padding: 0 !important; font-size: 35px !important; line-height: 1 !important; box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important; margin: 0 auto !important; display: flex !important; align-items: center !important; justify-content: center !important; }
     div[data-testid="stHorizontalBlock"] button[kind="primary"] { background-color: #FF8C00 !important; border: 2px solid #FF8C00 !important; color: #FFFF00 !important; text-shadow: 1px 1px 1px #333; }
     div[data-testid="stHorizontalBlock"] button[kind="secondary"] { background-color: white !important; border: 2px solid #FF8C00 !important; color: black !important; }
