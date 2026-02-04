@@ -163,51 +163,50 @@ def inicializar_session_state():
 
 inicializar_session_state()
 
-# --- 3. ESTILO VISUAL (CSS V76.0 - SOLUÇÃO FINAL DE COR) ---
+# --- 3. ESTILO VISUAL (CSS V77.0 - ESTRATÉGIA CINZA CLARO "BOX-SHADOW HACK") ---
 st.markdown("""
     <style>
-    /* 1. COMANDO MESTRE: Diz ao navegador que o site é APENAS claro */
-    :root {
-        color-scheme: light only !important;
-    }
+    :root { color-scheme: light; --light-gray-bg: #F0F2F5; }
+    .stApp { background-color: #ffffff; color: #000000; }
     
-    .stApp {
-        background-color: #ffffff; 
-        color: #000000;
-    }
+    /* ============================================================
+       TÉCNICA "BOX-SHADOW" PARA FORÇAR CINZA CLARO EM MOBILE
+       Isso força uma "tinta" cinza dentro do campo, que o modo escuro
+       tem mais dificuldade de inverter do que um fundo sólido normal.
+       ============================================================ */
     
-    /* 2. FORÇA BRUTA EM INPUTS */
-    /* Target específico para Streamlit widgets */
+    input, textarea, select, 
     .stTextInput input, 
     .stTextArea textarea, 
-    .stSelectbox div[data-baseweb="select"] > div,
-    input[type="text"],
-    textarea {
-        background-color: #ffffff !important; /* Fundo Branco Sólido */
-        color: #000000 !important; /* Texto Preto Sólido */
-        border: 1px solid #cccccc !important; /* Borda visível */
-        -webkit-text-fill-color: #000000 !important; /* Safari */
+    div[data-baseweb="select"] > div,
+    div[data-baseweb="base-input"] {
+        /* O TRUQUE: Sombra interna sólida na cor cinza claro */
+        box-shadow: 0 0 0 1000px var(--light-gray-bg) inset !important;
+        /* Garante o fundo também */
+        background-color: var(--light-gray-bg) !important;
+        /* Texto Preto Sólido */
+        color: #000000 !important;
+        -webkit-text-fill-color: #000000 !important; /* Para iPhone */
         caret-color: #000000 !important; /* Cursor preto */
+        border: 1px solid #ced4da !important; /* Borda cinza visível */
     }
 
-    /* 3. MENU SUSPENSO (Dropdown) */
-    ul[data-baseweb="menu"] {
-        background-color: #ffffff !important;
+    /* Dropdowns (Menus) */
+    ul[data-baseweb="menu"], div[data-baseweb="popover"] {
+        background-color: var(--light-gray-bg) !important;
     }
     li[data-baseweb="option"] {
+        background-color: var(--light-gray-bg) !important;
         color: #000000 !important;
-        background-color: #ffffff !important;
     }
-    /* Item selecionado */
+    /* Hover no menu */
     li[aria-selected="true"], li[data-baseweb="option"]:hover {
-        background-color: #ffe0b2 !important; /* Laranja claro */
-        color: #000000 !important;
+        background-color: #e0e0e0 !important; /* Cinza um pouco mais escuro ao passar o dedo */
     }
-    
-    /* 4. TEXTOS */
-    p, label, h1, h2, h3, h4, h5, h6, .stMarkdown {
-        color: #000000 !important;
-    }
+
+    /* Placeholders e Textos Gerais */
+    ::placeholder { color: #757575 !important; opacity: 1; }
+    p, label, h1, h2, h3, h4, h5, h6, .stMarkdown { color: #000000 !important; }
 
     /* ============================================================ */
 
