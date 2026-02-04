@@ -5,7 +5,6 @@ from streamlit_folium import st_folium
 import os
 import base64
 import random
-import math
 
 # --- 1. CONFIGURAÇÃO ---
 st.set_page_config(page_title="Iluminar Conecta", page_icon="💡", layout="centered")
@@ -35,10 +34,11 @@ def gerar_estrelas_html(nota):
 
 def definir_medalhas(row):
     foto = str(row['Foto']).lower()
+    # Se for link generico ou avatar = Prata, senão Ouro (SEM RAIO)
     if "flaticon" in foto or "avatar" in foto or foto == "" or "3135715" in foto:
         return ['🥈']
     else:
-        return ['🥇', '⚡']
+        return ['🥇']
 
 def html_parceiros_dinamico():
     html_content = ""
@@ -55,7 +55,7 @@ def html_parceiros_dinamico():
             html_content += f'<div class="oferta-item" style="width: 150px;"><img src="data:image/jpeg;base64,{b64}"></div>'
     if not html_content:
         html_content = '<div style="text-align:center; color:#999; width:100%;">Em breve</div>'
-    return f"""<div class="ofertas-container" style="justify-content: center;">{html_content}</div>"""
+    return f"""<div class="ofertas-container">{html_content}</div>"""
 
 def gerar_dados_ficticios_massivos():
     """Gera 10 profissionais por categoria com GÊNERO DA FOTO CORRIGIDO"""
@@ -84,24 +84,23 @@ def gerar_dados_ficticios_massivos():
                 
             nome_completo = f"{nome_proprio} {random.choice(sobrenomes)}"
             
-            # Alterna entre Foto Real (Ouro) e Avatar (Prata) de forma aleatória, mas mantendo gênero correto
+            # Status Aleatório (80% Disponível)
+            status = "Disponível" if random.random() < 0.8 else "Ocupado"
+            
+            # Alterna entre Foto Real (Ouro) e Avatar (Prata)
             if random.random() > 0.5:
-                # Foto Real
                 foto = f"https://randomuser.me/api/portraits/{genero_foto}/{random.randint(1,99)}.jpg"
                 nf = True
             else:
-                # Avatar (Genérico)
-                if is_man:
-                    foto = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png" # Avatar Homem
-                else:
-                    foto = "https://cdn-icons-png.flaticon.com/512/3135/3135768.png" # Avatar Mulher
+                if is_man: foto = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png" 
+                else: foto = "https://cdn-icons-png.flaticon.com/512/3135/3135768.png" 
                 nf = False
             
             item = {
                 'Nome': nome_completo, 'Categoria': cat, 'Whatsapp': '555599999999',
                 'Latitude': -28.6590 + (random.uniform(-0.015, 0.015)),
                 'Longitude': -56.0020 + (random.uniform(-0.015, 0.015)),
-                'Status': 'Disponível', 'Nota': round(random.uniform(4.5, 5.0), 1),
+                'Status': status, 'Nota': round(random.uniform(4.5, 5.0), 1),
                 'Foto': foto, 'Agenda_Lista': [], 'NF': nf
             }
             data.append(item)
@@ -133,6 +132,7 @@ def carregar_dados_planilha():
         df['Longitude'] = pd.to_numeric(df['Longitude'], errors='coerce')
         if 'NF' not in df.columns: df['NF'] = False
         else: df['NF'] = df['NF'].astype(bool)
+        if 'Status' not in df.columns: df['Status'] = "Disponível"
         
         def corrigir_foto(f):
             if pd.isna(f) or str(f).strip() == '' or str(f).lower() == 'avatar': return "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
@@ -170,62 +170,43 @@ def inicializar_session_state():
 
 inicializar_session_state()
 
-# --- 3. ESTILO VISUAL (CSS V65.0) ---
+# --- 3. ESTILO VISUAL (CSS V66.0) ---
 st.markdown("""
     <style>
     :root { color-scheme: light; }
     .stApp { background-color: #ffffff; color: #000000; }
     .block-container { padding: 1rem; padding-bottom: 5rem; }
 
-    .stTextArea textarea, .stTextInput input, .stSelectbox div[data-baseweb="select"] {
-        background-color: #f8f9fa !important;
-        color: #000000 !important;
-        -webkit-text-fill-color: #000000 !important;
-        border: 1px solid #ced4da !important;
-        border-radius: 8px !important;
+    /* CORREÇÃO CAMPOS PRETOS */
+    input, textarea, select, .stTextInput input, .stTextArea textarea, 
+    div[data-baseweb="select"] div, div[data-baseweb="input"],
+    div[role="listbox"] {
+        background-color: #f8f9fa !important; color: #000000 !important;
+        -webkit-text-fill-color: #000000 !important; border-color: #ced4da !important;
     }
-    div[data-baseweb="input"] { background-color: #f8f9fa !important; }
+    ul[data-baseweb="menu"], div[data-baseweb="popover"] { background-color: #ffffff !important; }
+    li[data-baseweb="option"] { color: #000000 !important; }
 
+    /* CARROSSEL ESQUERDA */
+    .ofertas-container { display: flex; overflow-x: auto; gap: 15px; padding: 10px; padding-left: 5px; scrollbar-width: none; width: 100%; justify-content: flex-start; }
+    .oferta-item { flex: 0 0 auto; width: 85%; max-width: 320px; border-radius: 10px; overflow: hidden; border: 1px solid #eee; }
+    .oferta-item img, .oferta-item video { width: 100%; height: auto; display: block; }
+
+    /* ABAS */
     div[data-baseweb="tab-list"] { display: flex; width: 100%; gap: 2px; }
-    button[data-baseweb="tab"] {
-        flex-grow: 1 !important; 
-        border-radius: 10px 10px 0 0 !important; 
-        background-color: #f1f1f1 !important;
-        border: none !important;
-        color: #555 !important;
-        font-size: 13px !important;
-        padding: 10px 0 !important;
-    }
+    button[data-baseweb="tab"] { flex-grow: 1 !important; border-radius: 10px 10px 0 0 !important; background-color: #f1f1f1 !important; border: none !important; color: #555 !important; font-size: 13px !important; padding: 10px 0 !important; }
     button[aria-selected="true"] { background-color: #FF8C00 !important; color: white !important; }
 
+    /* GERAL */
     .social-container { display: flex; justify-content: center; gap: 40px; margin-top: 15px; margin-bottom: 25px; width: 100%; }
     .insta-original img { filter: grayscale(100%) brightness(0) !important; }
-
-    div[data-testid="column"] > div > div > div > div > button {
-        border-radius: 12px !important; width: 100% !important; border: 1px solid #FF8C00 !important;
-        font-size: 16px !important; padding: 12px !important; height: auto !important;
-    }
-
-    div[data-testid="stHorizontalBlock"] button {
-        border-radius: 50% !important; width: 75px !important; height: 75px !important;
-        padding: 0 !important; font-size: 35px !important; line-height: 1 !important;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important; margin: 0 auto !important;
-        display: flex !important; align-items: center !important; justify-content: center !important;
-    }
-    div[data-testid="stHorizontalBlock"] button[kind="primary"] {
-        background-color: #FF8C00 !important; border: 2px solid #FF8C00 !important;
-        color: #FFFF00 !important; text-shadow: 1px 1px 1px #333;
-    }
-    div[data-testid="stHorizontalBlock"] button[kind="secondary"] {
-        background-color: white !important; border: 2px solid #FF8C00 !important; color: black !important;
-    }
-
+    div[data-testid="column"] button { border-radius: 12px !important; width: 100% !important; border: 1px solid #FF8C00 !important; font-size: 16px !important; padding: 12px !important; height: auto !important; }
+    div[data-testid="stHorizontalBlock"] button { border-radius: 50% !important; width: 75px !important; height: 75px !important; padding: 0 !important; font-size: 35px !important; line-height: 1 !important; box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important; margin: 0 auto !important; display: flex !important; align-items: center !important; justify-content: center !important; }
+    div[data-testid="stHorizontalBlock"] button[kind="primary"] { background-color: #FF8C00 !important; border: 2px solid #FF8C00 !important; color: #FFFF00 !important; text-shadow: 1px 1px 1px #333; }
+    div[data-testid="stHorizontalBlock"] button[kind="secondary"] { background-color: white !important; border: 2px solid #FF8C00 !important; color: black !important; }
     .btn-whatsapp { display: block; width: 100%; background-color: #25D366; color: white !important; text-align: center; padding: 10px; border-radius: 20px; text-decoration: none; font-weight: bold; font-size: 14px; margin-top: 5px; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
     .card-profissional { background-color: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 15px; border-left: 5px solid #FF8C00; width: 100%; }
     .sticky-aviso { position: sticky; top: 0; z-index: 1000; background-color: #FF8C00; color: white !important; text-align: center; padding: 10px; font-weight: bold; font-size: 12px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 15px; }
-    .ofertas-container { display: flex; overflow-x: auto; gap: 10px; padding-bottom: 10px; scrollbar-width: none; width: 100%; }
-    .oferta-item { flex: 0 0 auto; width: 85%; max-width: 320px; border-radius: 10px; overflow: hidden; border: 1px solid #eee; }
-    .oferta-item img, .oferta-item video { width: 100%; height: auto; display: block; }
     .rotulo-icone { display: block; width: 100%; text-align: center; font-size: 11px; font-weight: bold; color: #444 !important; margin-top: 5px; line-height: 1.2; }
     .box-termos { height: 150px; overflow-y: scroll; background-color: #f8f9fa; border: 1px solid #ced4da; padding: 10px; border-radius: 8px; font-size: 12px; color: #000 !important; margin-bottom: 15px; text-align: justify; }
     div[data-testid="stHorizontalBlock"] { display: grid !important; grid-template-columns: repeat(3, 1fr) !important; gap: 10px !important; }
@@ -239,7 +220,7 @@ def tela_termos():
     if os.path.exists("logo.png"): st.image("logo.png", use_container_width=True)
     else: st.header("⚡ Iluminar Conecta")
     st.markdown("##### 📜 Termos de Uso")
-    texto_termos = """1. AVISO IMPORTANTE: Este é um aplicativo de teste da Iluminar.\n2. RESPONSABILIDADE: A empresa não se responsabiliza pelos serviços contratados diretamente com os prestadores.\n3. DADOS: Seus dados serão usados apenas para contato dentro do app.\n4. SEGURANÇA: Não compartilhe senhas financeiras."""
+    texto_termos = """1. AVISO IMPORTANTE: Este é um aplicativo de teste da Iluminar.\n2. RESPONSABILIDADE: A empresa não se responsabiliza pelos serviços contratados.\n3. DADOS: Seus dados serão usados apenas para contato dentro do app.\n4. SEGURANÇA: Não compartilhe senhas financeiras."""
     st.markdown(f"""<div class="box-termos">{texto_termos.replace(chr(10), "<br>")}</div>""", unsafe_allow_html=True)
     st.markdown(criar_link_download(texto_termos, "termos_uso.txt"), unsafe_allow_html=True)
     st.write("")
@@ -257,22 +238,19 @@ def formulario_cadastro_prestador():
     nome_exibicao = st.text_input("Nome no App (Ex: João Eletricista)")
     categoria = st.selectbox("Sua Categoria", ["Eletricista", "Pedreiro(a)", "Encanador(a)", "Ar-Condicionado", "Gesseiro(a)", "Vidraceiro(a)", "Jardineiro(a)", "Marmorista", "Serviços Gerais"])
     whats = st.text_input("WhatsApp (Com DDD)")
-    
     st.markdown("**Foto de Perfil:**")
     tipo_foto = st.radio("Foto:", ["Enviar Foto Real (Ganha Ouro 🥇)", "Usar Avatar (Ganha Prata 🥈)"])
     foto_final = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
     medalhas_temp = []
-    
     if "Enviar Foto Real" in tipo_foto:
         uploaded = st.file_uploader("Sua foto", type=['jpg', 'png'])
         if uploaded:
             foto_final = "https://randomuser.me/api/portraits/men/99.jpg"
-            medalhas_temp = ['🥇', '⚡']
+            medalhas_temp = ['🥇']
             st.success("Foto OK! Medalha de Ouro.")
     else:
         st.warning("Avatar selecionado (Medalha de Prata).")
         medalhas_temp = ['🥈']
-        
     nf = st.checkbox("Emito NF")
     if st.button("CONCLUIR CADASTRO", type="primary"):
         if nome_completo and whats:
@@ -290,14 +268,12 @@ def tela_identificacao():
     if 'tela_cadastro' in st.session_state and st.session_state['tela_cadastro']:
         formulario_cadastro_prestador()
         return
-
     st.markdown("### 👤 Quem é você?")
     st.markdown("##### Para Clientes")
     nome = st.text_input("Seu Nome")
     up = st.file_uploader("Foto (Opcional)", type=['jpg', 'png'])
     if up: st.caption("Nota: Foto simulada para teste.")
     avatar = "https://randomuser.me/api/portraits/women/88.jpg" if up else "https://cdn-icons-png.flaticon.com/512/1077/1077114.png"
-
     if st.button("Sou Cliente (Entrar)", type="primary"):
         st.session_state['usuario'] = {"nome": nome if nome else "Visitante", "tipo": "Cliente", "foto": avatar}
         st.rerun()
@@ -373,7 +349,7 @@ def app_principal():
             df = st.session_state['prestadores']
             filtro = st.session_state['filtro']
             if 'Categoria' in df.columns:
-                df_filtrado = df[df['Categoria'].astype(str).str.contains(filtro, case=False, na=False)]
+                df_filtrado = df[df['Categoria'].astype(str).str.contains(filtro, case=False, regex=False, na=False)]
             else: df_filtrado = pd.DataFrame()
 
             st.write(f"Encontrados: **{len(df_filtrado)} profissionais**")
@@ -384,12 +360,16 @@ def app_principal():
             for i, row in df_filtrado.iterrows():
                 meds = " ".join(row['Medalhas'])
                 nf_html = '<span style="background-color:#E3F2FD; color:#1565C0; padding:2px 6px; border-radius:4px; font-size:10px; margin-left:5px;">📄 NF</span>' if row.get('NF') else ''
+                status_color = "#4CAF50" if row.get('Status') == "Disponível" else "#F44336"
+                status_html = f'<span style="color:{status_color}; font-weight:bold; font-size:11px;">● {row.get("Status", "Indisponível")}</span>'
+                
                 card = "".join([
                     f'<div class="card-profissional"><div style="display:flex; align-items:center;">',
                     f'<img src="{row["Foto"]}" style="border-radius:50%; width:55px; height:55px; margin-right:15px; border:2px solid #EEE; object-fit:cover;">',
                     f'<div><div style="font-weight:bold; color:#333;">{row["Nome"]} {meds}</div>',
                     f'<div style="color:#666; font-size:12px;">{row["Categoria"]}</div>',
                     f'<div>{gerar_estrelas_html(row["Nota"])} {nf_html}</div>',
+                    f'<div style="margin-top:2px;">{status_html}</div>',
                     f'</div></div><a href="https://wa.me/{row["Whatsapp"]}" target="_blank" class="btn-whatsapp">📲 Chamar no WhatsApp</a></div>'
                 ])
                 st.markdown(card, unsafe_allow_html=True)
@@ -409,9 +389,8 @@ def app_principal():
                     break
         filtro_mapa = st.selectbox("O que você quer buscar?", opcoes_filtro, index=index_padrao)
         
-        # BOTÃO DE BUSCA PRÓXIMA (Simulado)
         if st.button("📍 Encontrar Profissional Mais Próximo"):
-            st.success("Buscando prestador mais próximo da sua localização atual (Centro)...")
+            st.success("Buscando prestador mais próximo...")
             st.caption("Resultado: Marcos Costa (300m) - Ver no mapa")
 
         m = folium.Map(location=[-28.6592, -56.0020], zoom_start=13)
@@ -439,10 +418,33 @@ def app_principal():
                 icon=folium.Icon(color='orange', icon=icone_nome, prefix='fa')
             ).add_to(m)
         st_folium(m, width=700, height=400)
+        
+        # --- LISTA ABAIXO DO MAPA (NOVA) ---
+        st.divider()
+        st.markdown(f"##### Resultados nesta região ({len(df_mapa)})")
+        for i, row in df_mapa.head(5).iterrows(): # Mostra top 5 para não poluir
+            status_color = "#4CAF50" if row.get('Status') == "Disponível" else "#F44336"
+            meds = " ".join(row['Medalhas']) if isinstance(row['Medalhas'], list) else ""
+            card = "".join([
+                f'<div class="card-profissional" style="border-left: 3px solid #ccc; padding: 10px;">',
+                f'<div style="display:flex; align-items:center;">',
+                f'<img src="{row["Foto"]}" style="border-radius:50%; width:40px; height:40px; margin-right:10px; object-fit:cover;">',
+                f'<div><div style="font-weight:bold; font-size:14px; color:#333;">{row["Nome"]} {meds}</div>',
+                f'<div style="color:#666; font-size:11px;">{row["Categoria"]} • <span style="color:{status_color}">{row.get("Status", "Indisponível")}</span></div>',
+                f'</div></div></div>'
+            ])
+            st.markdown(card, unsafe_allow_html=True)
 
     with aba3:
         st.markdown("### 💬 Mural")
+        usuario_logado = st.session_state['usuario']
+        is_prestador = usuario_logado and usuario_logado.get('tipo') == 'Prestador de Serviços'
+
         for post in st.session_state['mural_posts']:
+            respostas_html = ""
+            for resp in post.get('respostas', []):
+                respostas_html += f'<div style="margin-left: 20px; font-size: 12px; color: #555; border-left: 2px solid #FF8C00; padding-left: 10px; margin-top: 5px;">↳ <b>Prestador:</b> {resp}</div>'
+
             st.markdown(f"""
             <div class="post-mural" style="margin-bottom: 15px; padding: 10px; background-color: #f8f9fa; border-radius: 10px; border: 1px solid #eee;">
                 <div class="post-header" style="display: flex; align-items: center; margin-bottom: 5px; font-weight: bold; color: #FF8C00;">
@@ -450,8 +452,18 @@ def app_principal():
                     {post['autor']}
                 </div>
                 <div class="post-texto" style="font-size: 14px; color: #333; padding-left: 45px;">{post['texto']}</div>
+                {respostas_html}
             </div>
             """, unsafe_allow_html=True)
+            
+            if is_prestador:
+                with st.expander(f"Responder {post['autor']}"):
+                    resp_texto = st.text_input(f"Sua resposta:", key=f"input_{post['id']}")
+                    if st.button("Enviar", key=f"btn_{post['id']}"):
+                        post['respostas'].append(resp_texto)
+                        st.success("Enviado!")
+                        st.rerun()
+
         st.divider()
         st.markdown("##### ✏️ Nova Mensagem")
         with st.form("novo_post"):
