@@ -34,10 +34,11 @@ def gerar_estrelas_html(nota):
 
 def definir_medalhas(row):
     foto = str(row['Foto']).lower()
-    # Se for link generico ou avatar = Prata, senão Ouro (SEM RAIO)
+    # Se for link generico ou avatar = Prata
     if "flaticon" in foto or "avatar" in foto or foto == "" or "3135715" in foto:
         return ['🥈']
     else:
+        # Se for Foto Real = OURO (SEM O RAIO)
         return ['🥇']
 
 def html_parceiros_dinamico():
@@ -58,36 +59,29 @@ def html_parceiros_dinamico():
     return f"""<div class="ofertas-container">{html_content}</div>"""
 
 def gerar_dados_ficticios_massivos():
-    """Gera 10 profissionais por categoria com GÊNERO DA FOTO CORRIGIDO"""
+    """Gera 10 profissionais por categoria"""
     categorias = [
         "Eletricista", "Pedreiro(a)", "Encanador(a)", "Ar-Condicionado", 
         "Gesseiro(a)", "Vidraceiro(a)", "Jardineiro(a)", "Marmorista", "Serviços Gerais"
     ]
-    
     nomes_homens = ["Carlos", "João", "Roberto", "Paulo", "Marcos", "José", "Luiz", "Pedro", "Lucas", "Rafael", "Bruno", "Diego", "Felipe", "Anderson"]
     nomes_mulheres = ["Ana", "Maria", "Fernanda", "Juliana", "Carla", "Amanda", "Sonia", "Patrícia", "Camila", "Larissa", "Beatriz", "Mariana"]
     sobrenomes = ["Silva", "Santos", "Oliveira", "Souza", "Lima", "Ferreira", "Costa", "Pereira", "Almeida", "Nascimento", "Rodrigues", "Gomes"]
-    
     data = []
     
     for cat in categorias:
         for i in range(10): 
-            # Lógica Rígida: Ímpar = Homem, Par = Mulher (para variar bem)
             is_man = (i % 2 == 0)
-            
             if is_man:
                 nome_proprio = random.choice(nomes_homens)
                 genero_foto = "men"
             else:
                 nome_proprio = random.choice(nomes_mulheres)
                 genero_foto = "women"
-                
-            nome_completo = f"{nome_proprio} {random.choice(sobrenomes)}"
             
-            # Status Aleatório (80% Disponível)
+            nome_completo = f"{nome_proprio} {random.choice(sobrenomes)}"
             status = "Disponível" if random.random() < 0.8 else "Ocupado"
             
-            # Alterna entre Foto Real (Ouro) e Avatar (Prata)
             if random.random() > 0.5:
                 foto = f"https://randomuser.me/api/portraits/{genero_foto}/{random.randint(1,99)}.jpg"
                 nf = True
@@ -104,7 +98,6 @@ def gerar_dados_ficticios_massivos():
                 'Foto': foto, 'Agenda_Lista': [], 'NF': nf
             }
             data.append(item)
-            
     df = pd.DataFrame(data)
     df['Medalhas'] = df.apply(definir_medalhas, axis=1)
     return df
@@ -114,26 +107,22 @@ def carregar_dados_planilha():
     try:
         df = pd.read_csv(SHEET_URL)
         if len(df) == 0: raise Exception("Vazia")
-        
         df = df.loc[:,~df.columns.duplicated()]
         if 'Agenda' not in df.columns: df['Agenda'] = ""
         df['Agenda'] = df['Agenda'].fillna("").astype(str)
         df['Agenda_Lista'] = df['Agenda'].apply(lambda x: [d.strip() for d in x.split(',')] if x.strip() != "" else [])
         df['Nota'] = pd.to_numeric(df['Nota'], errors='coerce').fillna(5.0)
-        
         def corrigir_lat_long(valor):
             try:
                 v = float(valor)
                 if abs(v) > 90: return v / 10 
                 return v
             except: return -28.6592 
-        
         df['Latitude'] = df['Latitude'].apply(corrigir_lat_long)
         df['Longitude'] = pd.to_numeric(df['Longitude'], errors='coerce')
         if 'NF' not in df.columns: df['NF'] = False
         else: df['NF'] = df['NF'].astype(bool)
         if 'Status' not in df.columns: df['Status'] = "Disponível"
-        
         def corrigir_foto(f):
             if pd.isna(f) or str(f).strip() == '' or str(f).lower() == 'avatar': return "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
             return f 
@@ -146,6 +135,12 @@ def carregar_dados_planilha():
 def inicializar_session_state():
     if 'usuario' not in st.session_state: st.session_state['usuario'] = None
     if 'aceitou_termos' not in st.session_state: st.session_state['aceitou_termos'] = False
+    
+    # LIMPEZA DE CACHE (Para garantir que o RAIO suma)
+    # Se já existir prestadores na memória, recarrega para aplicar a nova regra da medalha sem raio
+    if 'prestadores' in st.session_state:
+        del st.session_state['prestadores']
+    
     if 'mural_posts' not in st.session_state:
         comentarios = [
             ("Ana Silva", "women/44.jpg", "Alguém indica um eletricista urgente?"),
@@ -165,28 +160,37 @@ def inicializar_session_state():
         for i, (nome, img, texto) in enumerate(comentarios):
             posts.append({"id": i, "autor": nome, "avatar": f"https://randomuser.me/api/portraits/{img}", "texto": texto, "respostas": [], "denuncias": 0})
         st.session_state['mural_posts'] = posts
+        
     if 'prestadores' not in st.session_state:
         st.session_state['prestadores'] = carregar_dados_planilha()
 
 inicializar_session_state()
 
-# --- 3. ESTILO VISUAL (CSS V66.0) ---
+# --- 3. ESTILO VISUAL (CSS V68.0 - CORREÇÕES DE COR E LAYOUT) ---
 st.markdown("""
     <style>
     :root { color-scheme: light; }
     .stApp { background-color: #ffffff; color: #000000; }
     .block-container { padding: 1rem; padding-bottom: 5rem; }
 
-    /* CORREÇÃO CAMPOS PRETOS */
+    /* CORREÇÃO DEFINITIVA DE CAMPOS PRETOS (FORCE LIGHT MODE) */
+    /* Isso força todos os inputs a terem fundo claro e texto preto */
     input, textarea, select, .stTextInput input, .stTextArea textarea, 
     div[data-baseweb="select"] div, div[data-baseweb="input"],
-    div[role="listbox"] {
-        background-color: #f8f9fa !important; color: #000000 !important;
-        -webkit-text-fill-color: #000000 !important; border-color: #ced4da !important;
+    div[role="listbox"], div[data-baseweb="base-input"] {
+        background-color: #f8f9fa !important; 
+        color: #000000 !important;
+        -webkit-text-fill-color: #000000 !important;
+        caret-color: #000000 !important;
+        border-color: #ced4da !important;
     }
-    ul[data-baseweb="menu"], div[data-baseweb="popover"] { background-color: #ffffff !important; }
-    li[data-baseweb="option"] { color: #000000 !important; }
-
+    
+    /* Menu Suspenso (Dropdown) */
+    ul[data-baseweb="menu"], div[data-baseweb="popover"], li[data-baseweb="option"] { 
+        background-color: #ffffff !important; 
+        color: #000000 !important; 
+    }
+    
     /* CARROSSEL ESQUERDA */
     .ofertas-container { display: flex; overflow-x: auto; gap: 15px; padding: 10px; padding-left: 5px; scrollbar-width: none; width: 100%; justify-content: flex-start; }
     .oferta-item { flex: 0 0 auto; width: 85%; max-width: 320px; border-radius: 10px; overflow: hidden; border: 1px solid #eee; }
@@ -419,10 +423,9 @@ def app_principal():
             ).add_to(m)
         st_folium(m, width=700, height=400)
         
-        # --- LISTA ABAIXO DO MAPA (NOVA) ---
         st.divider()
         st.markdown(f"##### Resultados nesta região ({len(df_mapa)})")
-        for i, row in df_mapa.head(5).iterrows(): # Mostra top 5 para não poluir
+        for i, row in df_mapa.head(5).iterrows(): 
             status_color = "#4CAF50" if row.get('Status') == "Disponível" else "#F44336"
             meds = " ".join(row['Medalhas']) if isinstance(row['Medalhas'], list) else ""
             card = "".join([
