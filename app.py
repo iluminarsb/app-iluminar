@@ -42,8 +42,8 @@ def definir_medalhas(row):
 def gerar_dados_ficticios_massivos():
     """Gera 10 profissionais para cada categoria para o Backup"""
     categorias = [
-        "Eletricista", "Pedreiro", "Encanador", "Ar-Condicionado", 
-        "Gesseiro", "Vidraceiro", "Jardineiro", "Marmorista", "Serviços Gerais"
+        "Eletricista", "Pedreiro(a)", "Encanador(a)", "Ar-Condicionado", 
+        "Gesseiro(a)", "Vidraceiro(a)", "Jardineiro(a)", "Marmorista", "Serviços Gerais"
     ]
     nomes_base = ["Carlos", "João", "Roberto", "Paulo", "Marcos", "José", "Luiz", "Ana", "Maria", "Pedro", "Lucas", "Fernanda", "Rafael", "Bruno"]
     sobrenomes = ["Silva", "Santos", "Oliveira", "Souza", "Lima", "Ferreira", "Costa", "Pereira", "Almeida", "Nascimento"]
@@ -100,14 +100,14 @@ def inicializar_session_state():
             ("Ana Silva", "women/44.jpg", "Alguém indica um eletricista urgente para o bairro Centro?"),
             ("Marcos Oliveira", "men/32.jpg", "Sobraram 2 sacos de cimento. Vendo barato. Whatsapp: 55 99..."),
             ("Clara Souza", "women/68.jpg", "Preciso de frete para geladeira. Entre em contato comigo!"),
-            ("Roberto Santos", "men/85.jpg", "Procuro pedreiro para reforma. Orçamento sem compromisso."),
-            ("Luciana Ferreira", "women/12.jpg", "Alguém conhece jardineiro para poda? Entre em contato."),
+            ("Roberto Santos", "men/85.jpg", "Procuro pedreiro(a) para reforma. Orçamento sem compromisso."),
+            ("Luciana Ferreira", "women/12.jpg", "Alguém conhece jardineiro(a) para poda? Entre em contato."),
             ("Ricardo Gomes", "men/11.jpg", "Instalador de ar condicionado para sábado?"),
             ("Fernanda Lima", "women/90.jpg", "Quem faz limpeza de caixa d'água? Preciso urgente."),
-            ("Paulo Ricardo", "men/45.jpg", "Preciso de vidraceiro. Entre em contato comigo no privado."),
+            ("Paulo Ricardo", "men/45.jpg", "Preciso de vidraceiro(a). Entre em contato comigo no privado."),
             ("Juliana Costa", "women/22.jpg", "Procuro diarista para pós-obra. Pago bem."),
             ("Bruno Alves", "men/55.jpg", "Vendo restos de piso porcelanato. Entre em contato."),
-            ("Carla Dias", "women/33.jpg", "Indicação de encanador para vazamento oculto?"),
+            ("Carla Dias", "women/33.jpg", "Indicação de encanador(a) para vazamento oculto?"),
             ("Felipe Neto", "men/66.jpg", "Preciso de eletricista para instalar chuveiro."),
             ("Amanda Luz", "women/15.jpg", "Alguém sabe quem faz frete de sofá? Entre em contato comigo."),
             ("Diego Show", "men/10.jpg", "Marmorista disponível para balcão de cozinha?"),
@@ -122,14 +122,14 @@ def inicializar_session_state():
 
 inicializar_session_state()
 
-# --- 3. ESTILO VISUAL (CSS V59.0 - CORREÇÕES GERAIS) ---
+# --- 3. ESTILO VISUAL (CSS V60.0 - CORREÇÕES) ---
 st.markdown("""
     <style>
     :root { color-scheme: light; }
     .stApp { background-color: #ffffff; color: #000000; }
     .block-container { padding: 1rem; padding-bottom: 5rem; }
 
-    /* CORREÇÃO DO MURAL E INPUTS (CINZA CLARO) */
+    /* CORREÇÃO DO MURAL E INPUTS (CINZA CLARO FORÇADO) */
     .stTextArea textarea, .stTextInput input {
         background-color: #f8f9fa !important;
         color: #000000 !important;
@@ -137,26 +137,22 @@ st.markdown("""
         border: 1px solid #ced4da !important;
         border-radius: 8px !important;
     }
+    
+    /* REMOVER FUNDO PRETO INDESEJADO */
+    div[data-baseweb="input"] { background-color: #f8f9fa !important; }
 
-    /* CORREÇÃO DAS ABAS (LARGURA TOTAL E ARREDONDADAS) */
-    div[data-baseweb="tab-list"] {
-        display: flex;
-        width: 100%;
-        gap: 2px;
-    }
+    /* ABAS */
+    div[data-baseweb="tab-list"] { display: flex; width: 100%; gap: 2px; }
     button[data-baseweb="tab"] {
-        flex-grow: 1 !important; /* Preenche a largura */
-        border-radius: 10px 10px 0 0 !important; /* Cantos superiores arredondados */
+        flex-grow: 1 !important; 
+        border-radius: 10px 10px 0 0 !important; 
         background-color: #f1f1f1 !important;
         border: none !important;
         color: #555 !important;
-        font-size: 14px !important;
+        font-size: 13px !important;
         padding: 10px 0 !important;
     }
-    button[aria-selected="true"] {
-        background-color: #FF8C00 !important;
-        color: white !important;
-    }
+    button[aria-selected="true"] { background-color: #FF8C00 !important; color: white !important; }
 
     /* ÍCONES SOCIAIS */
     .social-container { display: flex; justify-content: center; gap: 40px; margin-top: 15px; margin-bottom: 25px; width: 100%; }
@@ -164,24 +160,15 @@ st.markdown("""
 
     /* BOTÕES DE LOGIN (RETANGULARES) */
     div[data-testid="column"] > div > div > div > div > button {
-        border-radius: 12px !important;
-        width: 100% !important;
-        border: 1px solid #FF8C00 !important;
-        font-size: 16px !important;
-        padding: 12px !important;
-        height: auto !important;
+        border-radius: 12px !important; width: 100% !important; border: 1px solid #FF8C00 !important;
+        font-size: 16px !important; padding: 12px !important; height: auto !important;
     }
 
     /* ÍCONES DE CATEGORIA (REDONDOS NA GRADE) */
     div[data-testid="stHorizontalBlock"] button {
-        border-radius: 50% !important;
-        width: 75px !important;
-        height: 75px !important;
-        padding: 0 !important;
-        font-size: 35px !important;
-        line-height: 1 !important;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
-        margin: 0 auto !important;
+        border-radius: 50% !important; width: 75px !important; height: 75px !important;
+        padding: 0 !important; font-size: 35px !important; line-height: 1 !important;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important; margin: 0 auto !important;
         display: flex !important; align-items: center !important; justify-content: center !important;
     }
     div[data-testid="stHorizontalBlock"] button[kind="primary"] {
@@ -192,7 +179,7 @@ st.markdown("""
         background-color: white !important; border: 2px solid #FF8C00 !important; color: black !important;
     }
 
-    /* LAYOUT GERAL */
+    /* GERAL */
     .btn-whatsapp { display: block; width: 100%; background-color: #25D366; color: white !important; text-align: center; padding: 10px; border-radius: 20px; text-decoration: none; font-weight: bold; font-size: 14px; margin-top: 5px; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
     .card-profissional { background-color: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 15px; border-left: 5px solid #FF8C00; width: 100%; }
     .sticky-aviso { position: sticky; top: 0; z-index: 1000; background-color: #FF8C00; color: white !important; text-align: center; padding: 10px; font-weight: bold; font-size: 12px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 15px; }
@@ -200,22 +187,7 @@ st.markdown("""
     .oferta-item { flex: 0 0 auto; width: 85%; max-width: 320px; border-radius: 10px; overflow: hidden; border: 1px solid #eee; }
     .oferta-item img, .oferta-item video { width: 100%; height: auto; display: block; }
     .rotulo-icone { display: block; width: 100%; text-align: center; font-size: 11px; font-weight: bold; color: #444 !important; margin-top: 5px; line-height: 1.2; }
-    
-    /* BOX TERMOS RESTAURADO */
-    .box-termos { 
-        height: 150px; 
-        overflow-y: scroll; 
-        background-color: #f8f9fa; 
-        border: 1px solid #ced4da; 
-        padding: 10px; 
-        border-radius: 8px; 
-        font-size: 12px; 
-        color: #000 !important; 
-        margin-bottom: 15px; 
-        text-align: justify; 
-    }
-    
-    /* Grid de 3 colunas */
+    .box-termos { height: 150px; overflow-y: scroll; background-color: #f8f9fa; border: 1px solid #ced4da; padding: 10px; border-radius: 8px; font-size: 12px; color: #000 !important; margin-bottom: 15px; text-align: justify; }
     div[data-testid="stHorizontalBlock"] { display: grid !important; grid-template-columns: repeat(3, 1fr) !important; gap: 10px !important; }
     div[data-testid="column"] { min-width: 0 !important; }
     </style>
@@ -227,14 +199,9 @@ def tela_termos():
     if os.path.exists("logo.png"): st.image("logo.png", use_container_width=True)
     else: st.header("⚡ Iluminar Conecta")
     st.markdown("##### 📜 Termos de Uso")
-    
-    # CONTEÚDO DOS TERMOS RESTAURADO
-    texto_termos = """1. AVISO IMPORTANTE: Este é um aplicativo de teste da Iluminar.\n2. RESPONSABILIDADE: A empresa não se responsabiliza pelos serviços contratados diretamente com os prestadores.\n3. DADOS: Seus dados serão usados apenas para contato dentro do app.\n4. SEGURANÇA: Não compartilhe senhas financeiras ou dados bancários pelo chat.\n5. FINALIDADE: O objetivo é conectar clientes a prestadores de serviço locais."""
-    
+    texto_termos = """1. AVISO IMPORTANTE: Este é um aplicativo de teste da Iluminar.\n2. RESPONSABILIDADE: A empresa não se responsabiliza pelos serviços contratados diretamente com os prestadores.\n3. DADOS: Seus dados serão usados apenas para contato dentro do app.\n4. SEGURANÇA: Não compartilhe senhas financeiras."""
     st.markdown(f"""<div class="box-termos">{texto_termos.replace(chr(10), "<br>")}</div>""", unsafe_allow_html=True)
-    # LINK DE DOWNLOAD RESTAURADO
     st.markdown(criar_link_download(texto_termos, "termos_uso.txt"), unsafe_allow_html=True)
-    
     st.write("")
     aceite = st.checkbox("Li os termos de uso, concordo e aceito.")
     if aceite:
@@ -248,7 +215,7 @@ def formulario_cadastro_prestador():
     nome_completo = st.text_input("Nome Completo (Obrigatório)")
     cpf = st.text_input("CPF (Somente números)")
     nome_exibicao = st.text_input("Nome no App (Ex: João Eletricista)")
-    categoria = st.selectbox("Sua Categoria", ["Eletricista", "Pedreiro", "Encanador", "Ar-Condicionado", "Gesseiro", "Vidraceiro", "Jardineiro", "Marmorista", "Serviços Gerais"])
+    categoria = st.selectbox("Sua Categoria", ["Eletricista", "Pedreiro(a)", "Encanador(a)", "Ar-Condicionado", "Gesseiro(a)", "Vidraceiro(a)", "Jardineiro(a)", "Marmorista", "Serviços Gerais"])
     whats = st.text_input("WhatsApp (Com DDD)")
     
     st.markdown("**Foto de Perfil:**")
@@ -280,30 +247,25 @@ def formulario_cadastro_prestador():
 
 def tela_identificacao():
     if os.path.exists("logo.png"): st.image("logo.png", use_container_width=True)
-    
     if 'tela_cadastro' in st.session_state and st.session_state['tela_cadastro']:
         formulario_cadastro_prestador()
         return
 
     st.markdown("### 👤 Quem é você?")
-    
     st.markdown("##### Para Clientes")
     nome = st.text_input("Seu Nome")
     up = st.file_uploader("Foto (Opcional)", type=['jpg', 'png'])
     if up: st.caption("Nota: Foto simulada para teste.")
-    
     avatar = "https://randomuser.me/api/portraits/women/88.jpg" if up else "https://cdn-icons-png.flaticon.com/512/1077/1077114.png"
 
     if st.button("Sou Cliente (Entrar)", type="primary"):
         st.session_state['usuario'] = {"nome": nome if nome else "Visitante", "tipo": "Cliente", "foto": avatar}
         st.rerun()
-            
     st.divider()
     st.markdown("##### Para Profissionais")
     if st.button("Quero me cadastrar como Prestador"):
         st.session_state['tela_cadastro'] = True
         st.rerun()
-    
     if st.button("Já tenho cadastro (Entrar)", type="secondary"):
         st.session_state['usuario'] = {"nome": "Prestador", "tipo": "Prestador de Serviços"}
         st.rerun()
@@ -332,20 +294,19 @@ def app_principal():
                 st.markdown(f'<div class="rotulo-icone">{nome}</div>', unsafe_allow_html=True)
 
         btn_cat(c1, "⚡", "Eletricista", "Eletricista")
-        btn_cat(c2, "🏗️", "Pedreiro", "Pedreiro")
-        btn_cat(c3, "🚰", "Encanador", "Encanador")
+        btn_cat(c2, "🏗️", "Pedreiro(a)", "Pedreiro(a)")
+        btn_cat(c3, "🚰", "Encanador(a)", "Encanador(a)")
         st.write("")
         c4, c5, c6 = st.columns(3)
         btn_cat(c4, "❄️", "Ar-Cond.", "Ar-Condicionado")
-        btn_cat(c5, "🧱", "Gesseiro", "Gesseiro")
-        btn_cat(c6, "🪟", "Vidraceiro", "Vidraceiro")
+        btn_cat(c5, "🧱", "Gesseiro(a)", "Gesseiro(a)")
+        btn_cat(c6, "🪟", "Vidraceiro(a)", "Vidraceiro(a)")
         st.write("")
         c7, c8, c9 = st.columns(3)
-        btn_cat(c7, "🌱", "Jardineiro", "Jardineiro")
+        btn_cat(c7, "🌱", "Jardineiro(a)", "Jardineiro(a)")
         btn_cat(c8, "🪨", "Marmorista", "Marmorista")
         btn_cat(c9, "🛠️", "Serv. Gerais", "Serviços Gerais")
 
-        # HTML DAS OFERTAS (CRIADO AGORA, EXIBIDO DEPOIS)
         ofertas_html = ""
         for i in range(1,6):
             if os.path.exists(f"oferta{i}.mp4"):
@@ -356,18 +317,16 @@ def app_principal():
                 ofertas_html += f'<div class="oferta-item"><img src="data:image/jpeg;base64,{b64}"></div>'
         if not ofertas_html: ofertas_html = '<div class="oferta-item"><img src="https://via.placeholder.com/300x200/FF8C00/FFFFFF?text=Ofertas"></div>'
         
-        # --- LÓGICA DE EXIBIÇÃO DE OFERTAS ---
-        # Se NÃO TEM filtro selecionado (Tela inicial limpa), mostra ofertas NO TOPO
+        # OFERTAS NO TOPO SE NÃO TIVER FILTRO
         if st.session_state['filtro'] == "":
             st.divider()
             st.markdown("##### 🔥 Ofertas da Semana")
             st.markdown(f"""<div class="ofertas-container">{ofertas_html}</div>""", unsafe_allow_html=True)
-            st.info("👆 Toque em uma categoria acima para ver os profissionais disponíveis.")
+            st.info("👆 Toque em uma categoria acima.")
             st.divider()
             st.markdown("###### 📢 Parceiros em Destaque")
             st.markdown(html_parceiros_dinamico(), unsafe_allow_html=True)
 
-        # Se TEM filtro selecionado (Lista de Profissionais), mostra ofertas EM BAIXO
         else:
             st.write("")
             st.markdown("""<div class="sticky-aviso">Faça o seu orçamento de materiais conosco através do botão do Whatsapp acima.</div>""", unsafe_allow_html=True)
@@ -386,7 +345,6 @@ def app_principal():
             for i, row in df_filtrado.iterrows():
                 meds = " ".join(row['Medalhas'])
                 nf_html = '<span style="background-color:#E3F2FD; color:#1565C0; padding:2px 6px; border-radius:4px; font-size:10px; margin-left:5px;">📄 NF</span>' if row.get('NF') else ''
-                
                 card = "".join([
                     f'<div class="card-profissional"><div style="display:flex; align-items:center;">',
                     f'<img src="{row["Foto"]}" style="border-radius:50%; width:55px; height:55px; margin-right:15px; border:2px solid #EEE; object-fit:cover;">',
@@ -397,14 +355,20 @@ def app_principal():
                 ])
                 st.markdown(card, unsafe_allow_html=True)
             
-            # AQUI ESTÃO AS OFERTAS EM BAIXO DA LISTA
+            # OFERTAS EM BAIXO
             st.divider()
             st.markdown("##### 🔥 Aproveite também")
             st.markdown(f"""<div class="ofertas-container">{ofertas_html}</div>""", unsafe_allow_html=True)
 
     with aba2:
-        st.info("📍 Mapa")
-        m = folium.Map(location=[-28.6592, -56.0020], zoom_start=14)
+        st.info("📍 Mapa - Prestadores")
+        m = folium.Map(location=[-28.6592, -56.0020], zoom_start=13)
+        # LÓGICA DO MAPA RESTAURADA
+        df_mapa = st.session_state['prestadores']
+        if 'Latitude' in df_mapa.columns and 'Longitude' in df_mapa.columns:
+            df_mapa = df_mapa.dropna(subset=['Latitude', 'Longitude'])
+            for i, row in df_mapa.iterrows():
+                folium.Marker([row['Latitude'], row['Longitude']], popup=row['Nome'], icon=folium.Icon(color='orange', icon='bolt', prefix='fa')).add_to(m)
         st_folium(m, width=700, height=400)
 
     with aba3:
@@ -428,15 +392,13 @@ def app_principal():
     with aba4:
         st.markdown("### 🤝 Parceiros")
         st.markdown(html_parceiros_dinamico(), unsafe_allow_html=True)
-        st.info("Contato para parcerias: (55) 99...")
+        st.info("Quer ser um parceiro? Entre em contato!")
 
     with aba5:
         usuario = st.session_state['usuario']
         st.header(f"Olá, {usuario['nome']}")
-        
         if usuario.get('foto'):
-            st.markdown(f'<img src="{usuario["foto"]}" style="width:100px; border-radius:50%;">', unsafe_allow_html=True)
-            
+            st.image(usuario['foto'], width=100) # Erro corrigido aqui
         if st.button("Sair"):
             st.session_state['usuario'] = None
             st.rerun()
