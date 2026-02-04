@@ -6,7 +6,7 @@ import os
 import base64
 import random
 
-# --- 1. CONFIGURAÇÃO ---
+# --- 1. CONFIGURAÇÃO INICIAL (Obrigatório ser a primeira linha) ---
 st.set_page_config(
     page_title="Iluminar Conecta", 
     page_icon="💡", 
@@ -19,7 +19,8 @@ st.set_page_config(
 SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQebfRxbrTKHczD0zyzThfru67dqKpCbREHoDjZUPAQYY9OQdzEmxCewcxAdtuLc4Upef5UYdMRE2OD/pub?output=csv"
 # ==============================================================================
 
-# --- 2. FUNÇÕES AUXILIARES ---
+# --- 2. TODAS AS FUNÇÕES (MOVIDAS PARA O TOPO PARA EVITAR ERROS) ---
+
 def get_media_base64(file_path):
     if os.path.exists(file_path):
         with open(file_path, "rb") as f:
@@ -57,8 +58,10 @@ def html_parceiros_dinamico():
         elif os.path.exists(f"{nome_base}.jpg"):
             b64 = get_media_base64(f"{nome_base}.jpg")
             html_content += f'<div class="oferta-item" style="width: 150px;"><img src="data:image/jpeg;base64,{b64}"></div>'
+    
     if not html_content:
         html_content = '<div style="text-align:center; color:#999; width:100%;">Em breve</div>'
+        
     return f"""<div class="ofertas-container">{html_content}</div>"""
 
 def gerar_dados_ficticios_massivos():
@@ -164,53 +167,46 @@ def inicializar_session_state():
 
 inicializar_session_state()
 
-# --- 3. ESTILO VISUAL (CSS V73.0 - O RETORNO DO FORCE LIGHT MODE) ---
+# --- 3. ESTILO VISUAL (CSS V74.0 - ANTI-DARK MODE NUCLEAR COM @MEDIA) ---
 st.markdown("""
     <style>
-    /* Força o tema claro em todo o app */
+    /* Força o tema claro na raiz */
     :root { color-scheme: light; }
     .stApp { background-color: #ffffff; color: #000000; }
     
     /* ============================================================
-       CORREÇÃO SUPREMA PARA INPUTS EM MODO ESCURO
+       CORREÇÃO NUCLEAR PARA INPUTS EM MODO ESCURO
        ============================================================ */
     
-    /* 1. Alvos genéricos de input */
-    input, textarea, select {
+    /* Regra geral e força bruta via @media para garantir em Mobile */
+    input, textarea, select, .stTextInput input, .stTextArea textarea, div[data-baseweb="select"] div {
         background-color: #f8f9fa !important;
         color: #000000 !important;
         caret-color: #000000 !important;
+        border: 1px solid #ced4da !important;
+        -webkit-text-fill-color: #000000 !important;
     }
 
-    /* 2. Alvos específicos do Streamlit (Divs wrappers) */
-    div[data-baseweb="base-input"],
-    div[data-baseweb="input"],
-    div[data-baseweb="select"] > div,
-    .stTextInput > div > div > input,
-    .stTextArea > div > div > textarea {
-        background-color: #f8f9fa !important;
-        color: #000000 !important;
-        border-color: #ced4da !important;
-        -webkit-text-fill-color: #000000 !important; /* Essencial para Safari/iOS */
+    @media (prefers-color-scheme: dark) {
+        input, textarea, select, 
+        .stTextInput > div > div > input, 
+        .stTextArea > div > div > textarea,
+        div[data-baseweb="base-input"] {
+            background-color: #f8f9fa !important;
+            color: #000000 !important;
+            -webkit-text-fill-color: #000000 !important;
+            border-color: #ced4da !important;
+        }
     }
 
-    /* 3. Menus Suspensos e Popovers */
-    div[data-baseweb="popover"],
-    ul[data-baseweb="menu"] {
+    /* Menus Suspensos e Popovers (Garante fundo branco) */
+    div[data-baseweb="popover"], ul[data-baseweb="menu"], li[data-baseweb="option"] {
         background-color: #ffffff !important;
-    }
-    li[data-baseweb="option"] {
         color: #000000 !important;
-        background-color: #ffffff !important;
-    }
-    li[data-baseweb="option"]:hover, li[aria-selected="true"] {
-        background-color: #f0f0f0 !important;
     }
     
-    /* 4. Labels e Textos */
-    label, .stMarkdown, p, h1, h2, h3, h4, h5, h6 {
-        color: #000000 !important;
-    }
+    /* Placeholders */
+    ::placeholder { color: #666666 !important; opacity: 1; }
 
     /* ============================================================ */
 
@@ -228,9 +224,12 @@ st.markdown("""
     .social-container { display: flex; justify-content: center; gap: 40px; margin-top: 15px; margin-bottom: 25px; width: 100%; }
     .insta-original img { filter: grayscale(100%) brightness(0) !important; }
     div[data-testid="column"] button { border-radius: 12px !important; width: 100% !important; border: 1px solid #FF8C00 !important; font-size: 16px !important; padding: 12px !important; height: auto !important; }
+    
+    /* Ícones de Categoria Redondos */
     div[data-testid="stHorizontalBlock"] button { border-radius: 50% !important; width: 75px !important; height: 75px !important; padding: 0 !important; font-size: 35px !important; line-height: 1 !important; box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important; margin: 0 auto !important; display: flex !important; align-items: center !important; justify-content: center !important; }
     div[data-testid="stHorizontalBlock"] button[kind="primary"] { background-color: #FF8C00 !important; border: 2px solid #FF8C00 !important; color: #FFFF00 !important; text-shadow: 1px 1px 1px #333; }
     div[data-testid="stHorizontalBlock"] button[kind="secondary"] { background-color: white !important; border: 2px solid #FF8C00 !important; color: black !important; }
+    
     .btn-whatsapp { display: block; width: 100%; background-color: #25D366; color: white !important; text-align: center; padding: 10px; border-radius: 20px; text-decoration: none; font-weight: bold; font-size: 14px; margin-top: 5px; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
     .card-profissional { background-color: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 15px; border-left: 5px solid #FF8C00; width: 100%; }
     .sticky-aviso { position: sticky; top: 0; z-index: 1000; background-color: #FF8C00; color: white !important; text-align: center; padding: 10px; font-weight: bold; font-size: 12px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 15px; }
