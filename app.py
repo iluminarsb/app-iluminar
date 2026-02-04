@@ -39,8 +39,27 @@ def definir_medalhas(row):
     else:
         return ['🥇', '⚡']
 
+def html_parceiros_dinamico():
+    html_content = ""
+    for i in range(1, 6):
+        nome_base = f"parceiro{i}"
+        if os.path.exists(f"{nome_base}.mp4"):
+            b64 = get_media_base64(f"{nome_base}.mp4")
+            html_content += f'<div class="oferta-item" style="width: 150px;"><video autoplay loop muted playsinline width="100%"><source src="data:video/mp4;base64,{b64}" type="video/mp4"></video></div>'
+        elif os.path.exists(f"{nome_base}.gif"):
+            b64 = get_media_base64(f"{nome_base}.gif")
+            html_content += f'<div class="oferta-item" style="width: 150px;"><img src="data:image/gif;base64,{b64}"></div>'
+        elif os.path.exists(f"{nome_base}.jpg"):
+            b64 = get_media_base64(f"{nome_base}.jpg")
+            html_content += f'<div class="oferta-item" style="width: 150px;"><img src="data:image/jpeg;base64,{b64}"></div>'
+    
+    if not html_content:
+        html_content = '<div style="text-align:center; color:#999; width:100%;">Em breve</div>'
+        
+    return f"""<div class="ofertas-container" style="justify-content: center;">{html_content}</div>"""
+
 def gerar_dados_ficticios_massivos():
-    """Gera 10 profissionais para cada categoria para o Backup"""
+    """Gera 10 profissionais por categoria (GÊNEROS AJUSTADOS)"""
     categorias = [
         "Eletricista", "Pedreiro(a)", "Encanador(a)", "Ar-Condicionado", 
         "Gesseiro(a)", "Vidraceiro(a)", "Jardineiro(a)", "Marmorista", "Serviços Gerais"
@@ -75,16 +94,32 @@ def carregar_dados_planilha():
     try:
         df = pd.read_csv(SHEET_URL)
         if len(df) == 0: raise Exception("Vazia")
+        
+        # Tratamento de Colunas Duplicadas (Erro da Imagem 6)
+        df = df.loc[:,~df.columns.duplicated()]
+
         if 'Agenda' not in df.columns: df['Agenda'] = ""
         df['Agenda'] = df['Agenda'].fillna("").astype(str)
         df['Agenda_Lista'] = df['Agenda'].apply(lambda x: [d.strip() for d in x.split(',')] if x.strip() != "" else [])
         df['Nota'] = pd.to_numeric(df['Nota'], errors='coerce').fillna(5.0)
-        df['Latitude'] = pd.to_numeric(df['Latitude'], errors='coerce')
+        
+        # CORREÇÃO DE LATITUDE (Erro da Imagem 6: -286.592 -> -28.6592)
+        def corrigir_lat_long(valor):
+            try:
+                v = float(valor)
+                if abs(v) > 90: return v / 10 # Corrige erro de digitação
+                return v
+            except:
+                return -28.6592 # Padrão São Borja
+        
+        df['Latitude'] = df['Latitude'].apply(corrigir_lat_long)
         df['Longitude'] = pd.to_numeric(df['Longitude'], errors='coerce')
+        
         if 'NF' not in df.columns: df['NF'] = False
         else: df['NF'] = df['NF'].astype(bool)
+        
         def corrigir_foto(f):
-            if pd.isna(f) or str(f).strip() == '': return "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+            if pd.isna(f) or str(f).strip() == '' or str(f).lower() == 'avatar': return "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
             return f 
         df['Foto'] = df['Foto'].apply(corrigir_foto)
         df['Medalhas'] = df.apply(definir_medalhas, axis=1)
@@ -122,7 +157,7 @@ def inicializar_session_state():
 
 inicializar_session_state()
 
-# --- 3. ESTILO VISUAL (CSS V60.0 - CORREÇÕES) ---
+# --- 3. ESTILO VISUAL (CSS V60.0) ---
 st.markdown("""
     <style>
     :root { color-scheme: light; }
@@ -137,8 +172,6 @@ st.markdown("""
         border: 1px solid #ced4da !important;
         border-radius: 8px !important;
     }
-    
-    /* REMOVER FUNDO PRETO INDESEJADO */
     div[data-baseweb="input"] { background-color: #f8f9fa !important; }
 
     /* ABAS */
@@ -215,6 +248,7 @@ def formulario_cadastro_prestador():
     nome_completo = st.text_input("Nome Completo (Obrigatório)")
     cpf = st.text_input("CPF (Somente números)")
     nome_exibicao = st.text_input("Nome no App (Ex: João Eletricista)")
+    # CATEGORIAS COM GÊNERO AJUSTADO
     categoria = st.selectbox("Sua Categoria", ["Eletricista", "Pedreiro(a)", "Encanador(a)", "Ar-Condicionado", "Gesseiro(a)", "Vidraceiro(a)", "Jardineiro(a)", "Marmorista", "Serviços Gerais"])
     whats = st.text_input("WhatsApp (Com DDD)")
     
@@ -317,7 +351,7 @@ def app_principal():
                 ofertas_html += f'<div class="oferta-item"><img src="data:image/jpeg;base64,{b64}"></div>'
         if not ofertas_html: ofertas_html = '<div class="oferta-item"><img src="https://via.placeholder.com/300x200/FF8C00/FFFFFF?text=Ofertas"></div>'
         
-        # OFERTAS NO TOPO SE NÃO TIVER FILTRO
+        # OFERTAS NO TOPO
         if st.session_state['filtro'] == "":
             st.divider()
             st.markdown("##### 🔥 Ofertas da Semana")
@@ -334,6 +368,7 @@ def app_principal():
             df = st.session_state['prestadores']
             filtro = st.session_state['filtro']
             if 'Categoria' in df.columns:
+                # FILTRO ROBUSTO (Ignora maiusculas e acentos)
                 df_filtrado = df[df['Categoria'].astype(str).str.contains(filtro, case=False, na=False)]
             else: df_filtrado = pd.DataFrame()
 
@@ -363,12 +398,17 @@ def app_principal():
     with aba2:
         st.info("📍 Mapa - Prestadores")
         m = folium.Map(location=[-28.6592, -56.0020], zoom_start=13)
-        # LÓGICA DO MAPA RESTAURADA
+        # MAPA COM CORREÇÃO DE LOCALIZAÇÃO (IMAGEM 1)
         df_mapa = st.session_state['prestadores']
-        if 'Latitude' in df_mapa.columns and 'Longitude' in df_mapa.columns:
-            df_mapa = df_mapa.dropna(subset=['Latitude', 'Longitude'])
-            for i, row in df_mapa.iterrows():
-                folium.Marker([row['Latitude'], row['Longitude']], popup=row['Nome'], icon=folium.Icon(color='orange', icon='bolt', prefix='fa')).add_to(m)
+        # Filtra apenas quem tem coordenadas válidas
+        df_mapa = df_mapa[pd.to_numeric(df_mapa['Latitude'], errors='coerce').notnull()]
+        
+        for i, row in df_mapa.iterrows():
+            folium.Marker(
+                [row['Latitude'], row['Longitude']], 
+                popup=row['Nome'], 
+                icon=folium.Icon(color='orange', icon='bolt', prefix='fa')
+            ).add_to(m)
         st_folium(m, width=700, height=400)
 
     with aba3:
@@ -398,7 +438,7 @@ def app_principal():
         usuario = st.session_state['usuario']
         st.header(f"Olá, {usuario['nome']}")
         if usuario.get('foto'):
-            st.image(usuario['foto'], width=100) # Erro corrigido aqui
+            st.image(usuario['foto'], width=100)
         if st.button("Sair"):
             st.session_state['usuario'] = None
             st.rerun()
