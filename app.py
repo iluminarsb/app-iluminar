@@ -36,13 +36,16 @@ def gerar_estrelas_html(nota):
     return f'<span style="color: #FF8C00; font-size: 15px; letter-spacing: 1px;">{estrelas}</span> <span style="font-size: 11px; color: #666; font-weight: bold;">{nota}</span>'
 
 def definir_medalhas(row):
-    """Define medalha baseado na foto: Avatar=Prata, Foto Real=Ouro"""
+    """
+    Define medalha:
+    - Foto Real (não tem 'avatar' ou 'flaticon' no link) -> OURO 🥇
+    - Avatar -> PRATA 🥈
+    """
     foto = str(row['Foto']).lower()
-    # Se for avatar padrão (flaticon) ou vazio -> Prata
-    if "flaticon" in foto or "avatar" in foto or foto == "":
+    if "flaticon" in foto or "avatar" in foto or foto == "" or "3135715" in foto:
         return ['🥈'] # Prata
     else:
-        return ['🥇', '⚡'] # Ouro + Raio
+        return ['🥇', '⚡'] # Ouro
 
 def carregar_dados_planilha():
     df = pd.DataFrame()
@@ -50,6 +53,7 @@ def carregar_dados_planilha():
         df = pd.read_csv(SHEET_URL)
         if len(df) == 0: raise Exception("Planilha Vazia")
 
+        # Tratamento básico
         if 'Agenda' not in df.columns: df['Agenda'] = ""
         df['Agenda'] = df['Agenda'].fillna("").astype(str)
         df['Agenda_Lista'] = df['Agenda'].apply(lambda x: [d.strip() for d in x.split(',')] if x.strip() != "" else [])
@@ -57,31 +61,33 @@ def carregar_dados_planilha():
         df['Latitude'] = pd.to_numeric(df['Latitude'], errors='coerce')
         df['Longitude'] = pd.to_numeric(df['Longitude'], errors='coerce')
         
+        # NF
+        if 'NF' not in df.columns: df['NF'] = False
+        else: df['NF'] = df['NF'].astype(bool)
+
         def corrigir_foto(f):
-            if pd.isna(f) or str(f).strip().lower() == 'avatar' or str(f).strip() == '':
-                return "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+            if pd.isna(f) or str(f).strip() == '': return "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
             return f 
         
         df = df.loc[:,~df.columns.duplicated()]
         if 'Foto' in df.columns: df['Foto'] = df['Foto'].apply(corrigir_foto)
         else: df['Foto'] = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
 
-        # Aplica a lógica de medalhas na Planilha Real
         df['Medalhas'] = df.apply(definir_medalhas, axis=1)
         
     except Exception:
-        # BACKUP COMPLETO (27 PROFISSIONAIS)
+        # 🚨 BACKUP TURBINADO (MISTURA DE OURO E PRATA) 🚨
         data = {
             'Nome': [
-                'Carlos Eletro', 'João da Luz', 'Roberto Fios', 
-                'Paulo Pedreiro', 'Marcos Construção', 'Antônio Obras', 
-                'José Encanador', 'Luiz Vazamentos', 'Fernando Tubos', 
-                'Ana Clima', 'Geladao Refri', 'Frio Max', 
-                'Maria Gesso', 'Decora Gesso', 'Arte em Gesso', 
-                'Vidraçaria Luz', 'Pedro Vidros', 'Transparente Vidros', 
-                'Carlos Jardim', 'Verde Vida', 'Jardins & Cia', 
-                'Roberto Mármores', 'Pedra Fina', 'Granitos Sul',
-                'Severino Faz Tudo', 'Help Casa', 'SOS Reparos'
+                'Roberto Eletricista', 'Carlos Eletro', 'João da Luz', # Eletricistas (1 Real, 2 Avatares)
+                'Construtora Silva', 'Paulo Pedreiro', 'Marcos Construção', 
+                'Hidráulica Express', 'José Encanador', 'Luiz Vazamentos',
+                'Clima Frio', 'Ana Clima', 'Geladao Refri', 
+                'Gesso Art', 'Maria Gesso', 'Decora Gesso',
+                'Vidros & Cia', 'Vidraçaria Luz', 'Pedro Vidros', 
+                'Jardins Belos', 'Carlos Jardim', 'Verde Vida', 
+                'Marmoraria Top', 'Roberto Mármores', 'Pedra Fina',
+                'Dr. Reparos', 'Severino Faz Tudo', 'Help Casa' 
             ],
             'Categoria': [
                 'Eletricista', 'Eletricista', 'Eletricista',
@@ -95,15 +101,26 @@ def carregar_dados_planilha():
                 'Serviços Gerais', 'Serviços Gerais', 'Serviços Gerais'
             ],
             'Whatsapp': ['555599999999'] * 27,
-            'Latitude': [-28.6583, -28.6605, -28.6550, -28.6620, -28.6575, -28.6650, -28.6590, -28.6540, -28.6610, -28.6560, -28.6630, -28.6580, -28.6600, -28.6530, -28.6640, -28.6550, -28.6615, -28.6570, -28.6560, -28.6625, -28.6545, -28.6540, -28.6600, -28.6585, -28.6595, -28.6612, -28.6578],
-            'Longitude': [-56.0041, -56.0010, -56.0080, -56.0030, -55.9990, -56.0055, -56.0100, -56.0020, -56.0070, -56.0040, -56.0000, -56.0120, -56.0050, -55.9980, -56.0090, -56.0100, -56.0025, -56.0060, -56.0010, -56.0085, -56.0035, -56.0080, -55.9995, -56.0110, -56.0045, -56.0022, -56.0066],
+            'Latitude': [-28.6583] * 27, # Simplificado para backup
+            'Longitude': [-56.0041] * 27,
             'Status': ['Disponível'] * 27,
-            'Nota': [5.0] * 27,
-            'Foto': ["https://cdn-icons-png.flaticon.com/512/3135/3135715.png"] * 27, # AVATARES
-            'Agenda_Lista': [[] for _ in range(27)]
+            'Nota': [5.0, 4.8, 4.5] * 9,
+            # FOTOS MISTAS: Algumas reais (randomuser), outras avatares (flaticon)
+            'Foto': [
+                "https://randomuser.me/api/portraits/men/32.jpg", "https://cdn-icons-png.flaticon.com/512/3135/3135715.png", "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+                "https://randomuser.me/api/portraits/men/45.jpg", "https://cdn-icons-png.flaticon.com/512/3135/3135715.png", "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+                "https://randomuser.me/api/portraits/men/22.jpg", "https://cdn-icons-png.flaticon.com/512/3135/3135715.png", "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+                "https://randomuser.me/api/portraits/women/44.jpg", "https://cdn-icons-png.flaticon.com/512/3135/3135768.png", "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+                "https://randomuser.me/api/portraits/women/60.jpg", "https://cdn-icons-png.flaticon.com/512/3135/3135768.png", "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+                "https://randomuser.me/api/portraits/men/11.jpg", "https://cdn-icons-png.flaticon.com/512/3135/3135715.png", "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+                "https://randomuser.me/api/portraits/men/78.jpg", "https://cdn-icons-png.flaticon.com/512/3135/3135715.png", "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+                "https://randomuser.me/api/portraits/men/55.jpg", "https://cdn-icons-png.flaticon.com/512/3135/3135715.png", "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+                "https://randomuser.me/api/portraits/men/99.jpg", "https://cdn-icons-png.flaticon.com/512/3135/3135715.png", "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+            ],
+            'Agenda_Lista': [[] for _ in range(27)],
+            'NF': [True, False, False] * 9 # Um sim, dois não
         }
         df = pd.DataFrame(data)
-        # Aplica a lógica de medalhas no Backup também
         df['Medalhas'] = df.apply(definir_medalhas, axis=1)
         
     return df
@@ -112,7 +129,7 @@ def inicializar_session_state():
     if 'usuario' not in st.session_state: st.session_state['usuario'] = None
     if 'aceitou_termos' not in st.session_state: st.session_state['aceitou_termos'] = False
     
-    # --- MURAL COM FOTOS DE CLIENTES REAIS (URLs aleatórias) ---
+    # --- MURAL COM FOTOS DE CLIENTES REAIS ---
     if 'mural_posts' not in st.session_state:
         st.session_state['mural_posts'] = [
             {"id": 1, "autor": "Ana Silva", "avatar": "https://randomuser.me/api/portraits/women/44.jpg", "texto": "Alguém indica um eletricista urgente para o bairro Centro? Minha luz caiu.", "respostas": [], "denuncias": 0},
@@ -130,7 +147,7 @@ def inicializar_session_state():
 
 inicializar_session_state()
 
-# --- 3. ESTILO VISUAL (CSS V53.0 - CORREÇÕES FINAIS) ---
+# --- 3. ESTILO VISUAL (CSS V54.0 - AJUSTES FINOS) ---
 st.markdown("""
     <style>
     :root { color-scheme: light; }
@@ -153,20 +170,20 @@ st.markdown("""
     .stRadio label p { color: #FF8C00 !important; font-weight: bold !important; font-size: 18px !important; }
     div[role="radiogroup"] [aria-checked="true"] > div:first-child { background-color: #FF8C00 !important; border-color: #FF8C00 !important; }
 
-    /* BOTÕES DOS ÍCONES (CÍRCULOS PERFEITOS) */
-    /* Botão SELECIONADO: Laranja com Texto Branco e Sombra no Ícone */
+    /* BOTÕES DOS ÍCONES (CÍRCULOS) - Ajuste de Cor do Ícone */
     button[kind="primary"] {
         background-color: #FF8C00 !important; border: 1px solid #FF8C00 !important;
-        color: white !important; 
-        border-radius: 50% !important; /* REDONDO */
+        color: #FFFF00 !important; /* TEXTO AMARELO PURO PARA O RAIO */
+        border-radius: 50% !important; 
         font-weight: bold !important; box-shadow: none !important;
         width: 80px !important; height: 80px !important; 
         font-size: 30px !important; line-height: 1 !important; padding: 0 !important;
-        text-shadow: 0px 0px 3px #000000; /* SOMBRA PARA DESTACAR O ÍCONE AMARELO */
+        /* Sombra escura para destacar o amarelo no fundo laranja */
+        text-shadow: 1px 1px 2px #333333; 
     }
     
     button[kind="secondary"] {
-        border-radius: 50% !important; /* REDONDO */
+        border-radius: 50% !important; 
         background-color: white !important; 
         border: 2px solid #FF8C00 !important; 
         color: black !important;
@@ -249,7 +266,7 @@ def formulario_cadastro_prestador():
         uploaded_file = st.file_uploader("Envie sua foto ou tire uma selfie", type=['jpg', 'png', 'jpeg'])
         if uploaded_file is not None:
             # Em app real salvaríamos a foto. Aqui simulamos que ele enviou.
-            foto_final = "https://randomuser.me/api/portraits/men/99.jpg" # Simulação de foto real
+            foto_final = "https://randomuser.me/api/portraits/men/99.jpg" # Simulação
             medalhas_temp = ['🥇', '⚡']
             st.success("Foto recebida! Você garantiu a Medalha de Ouro.")
         else:
@@ -287,7 +304,8 @@ def formulario_cadastro_prestador():
                 'Nota': 5.0,
                 'Foto': foto_final,
                 'Agenda_Lista': [],
-                'Medalhas': medalhas_temp
+                'Medalhas': medalhas_temp,
+                'NF': nota_fiscal
             }
             
             novo_df = pd.DataFrame([novo_prestador])
@@ -316,8 +334,6 @@ def tela_identificacao():
         return
 
     st.markdown("### 👤 Quem é você?")
-    
-    # CSS específico para restaurar botões normais nesta tela
     st.markdown("""<style>div[data-testid="stButton"] button {width: 100%; border-radius: 10px !important; height: auto !important;}</style>""", unsafe_allow_html=True)
     
     col_av1, col_av2 = st.columns([1, 3])
@@ -356,7 +372,6 @@ def html_ofertas():
 
 def html_parceiros_dinamico():
     html_content = ""
-    # PARCEIROS (MP4, GIF ou JPG)
     for i in range(1, 6):
         nome_base = f"parceiro{i}"
         if os.path.exists(f"{nome_base}.mp4"):
@@ -396,7 +411,6 @@ def app_principal():
         st.markdown("##### 🛠️ Categorias")
         if 'filtro' not in st.session_state: st.session_state['filtro'] = ""
 
-        # GRID 3 COLUNAS
         c1, c2, c3 = st.columns(3)
         def btn_cat(col, icone, nome, chave):
             tipo_botao = "primary" if st.session_state['filtro'] == chave else "secondary"
@@ -435,11 +449,18 @@ def app_principal():
 
             st.write(f"Encontrados: **{len(df_filtrado)} profissionais**")
             
+            # ORDENAÇÃO: Ouro Primeiro, depois Nota
+            # Cria coluna auxiliar de 'peso' para ordenar: Ouro = 0, Prata = 1
+            df_filtrado['Ordem_Medalha'] = df_filtrado['Medalhas'].apply(lambda x: 0 if '🥇' in x else 1)
+            df_filtrado = df_filtrado.sort_values(by=['Ordem_Medalha', 'Nota'], ascending=[True, False])
+            
             for i, row in df_filtrado.iterrows():
-                # Força a lista de medalhas a ser uma lista válida
                 lista_medalhas = row['Medalhas'] if isinstance(row['Medalhas'], list) else []
                 medalhas = " ".join(lista_medalhas)
                 estrelas_html = gerar_estrelas_html(row['Nota'])
+                
+                # Indicador de Nota Fiscal
+                nf_html = '<span style="background-color:#E3F2FD; color:#1565C0; padding:2px 6px; border-radius:4px; font-size:10px; margin-left:5px;">📄 NF</span>' if row.get('NF') else ''
                 
                 agenda_html = ""
                 if len(row['Agenda_Lista']) > 0:
@@ -454,7 +475,7 @@ def app_principal():
                         f'<div>',
                         f'<div style="font-weight:bold; color:#333;">{row["Nome"]} {medalhas}</div>',
                         f'<div style="color:#666; font-size:12px; margin-bottom: 2px;">{row["Categoria"]}</div>',
-                        f'<div>{estrelas_html} <span style="color:#888; font-size:10px;">• {row["Status"]}</span></div>',
+                        f'<div>{estrelas_html} {nf_html} <span style="color:#888; font-size:10px;">• {row["Status"]}</span></div>',
                         f'{agenda_html}',
                         f'</div></div>',
                         f'<a href="https://wa.me/{row["Whatsapp"]}" target="_blank" class="btn-whatsapp">📲 Chamar no WhatsApp</a>',
@@ -490,7 +511,6 @@ def app_principal():
     with aba3:
         st.markdown("### 💬 Mural")
         
-        # MOSTRA OS POSTS PRIMEIRO (Para a barra ficar em baixo)
         for post in st.session_state['mural_posts']:
             st.markdown(f"""
             <div class="post-mural" style="margin-bottom: 15px; padding: 10px; background-color: #f8f9fa; border-radius: 10px; border: 1px solid #eee;">
@@ -504,7 +524,6 @@ def app_principal():
             
         st.divider()
         st.markdown("##### ✏️ Nova Mensagem")
-        # BARRA DE MENSAGEM NO FINAL
         with st.form("novo_post"):
             texto_post = st.text_area("O que você precisa?", max_chars=300)
             if st.form_submit_button("Publicar", type="secondary"):
