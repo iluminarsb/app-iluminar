@@ -5,6 +5,7 @@ from streamlit_folium import st_folium
 import os
 import base64
 import random
+import math
 
 # --- 1. CONFIGURAÇÃO ---
 st.set_page_config(page_title="Iluminar Conecta", page_icon="💡", layout="centered")
@@ -57,25 +58,43 @@ def html_parceiros_dinamico():
     return f"""<div class="ofertas-container" style="justify-content: center;">{html_content}</div>"""
 
 def gerar_dados_ficticios_massivos():
-    """Gera 10 profissionais para TODAS as categorias"""
-    # LISTA EXATA DOS BOTÕES
+    """Gera 10 profissionais por categoria com GÊNERO DA FOTO CORRIGIDO"""
     categorias = [
         "Eletricista", "Pedreiro(a)", "Encanador(a)", "Ar-Condicionado", 
         "Gesseiro(a)", "Vidraceiro(a)", "Jardineiro(a)", "Marmorista", "Serviços Gerais"
     ]
-    nomes_base = ["Carlos", "João", "Roberto", "Paulo", "Marcos", "José", "Luiz", "Ana", "Maria", "Pedro", "Lucas", "Fernanda", "Rafael", "Bruno"]
-    sobrenomes = ["Silva", "Santos", "Oliveira", "Souza", "Lima", "Ferreira", "Costa", "Pereira", "Almeida", "Nascimento"]
+    
+    nomes_homens = ["Carlos", "João", "Roberto", "Paulo", "Marcos", "José", "Luiz", "Pedro", "Lucas", "Rafael", "Bruno", "Diego", "Felipe", "Anderson"]
+    nomes_mulheres = ["Ana", "Maria", "Fernanda", "Juliana", "Carla", "Amanda", "Sonia", "Patrícia", "Camila", "Larissa", "Beatriz", "Mariana"]
+    sobrenomes = ["Silva", "Santos", "Oliveira", "Souza", "Lima", "Ferreira", "Costa", "Pereira", "Almeida", "Nascimento", "Rodrigues", "Gomes"]
+    
     data = []
     
     for cat in categorias:
-        for i in range(10): # Garante 10 por categoria
-            nome_completo = f"{random.choice(nomes_base)} {random.choice(sobrenomes)}"
-            # Gênero da foto
-            if i % 2 == 0:
-                foto = f"https://randomuser.me/api/portraits/{'women' if i%3==0 else 'men'}/{random.randint(1,99)}.jpg"
+        for i in range(10): 
+            # Lógica Rígida: Ímpar = Homem, Par = Mulher (para variar bem)
+            is_man = (i % 2 == 0)
+            
+            if is_man:
+                nome_proprio = random.choice(nomes_homens)
+                genero_foto = "men"
+            else:
+                nome_proprio = random.choice(nomes_mulheres)
+                genero_foto = "women"
+                
+            nome_completo = f"{nome_proprio} {random.choice(sobrenomes)}"
+            
+            # Alterna entre Foto Real (Ouro) e Avatar (Prata) de forma aleatória, mas mantendo gênero correto
+            if random.random() > 0.5:
+                # Foto Real
+                foto = f"https://randomuser.me/api/portraits/{genero_foto}/{random.randint(1,99)}.jpg"
                 nf = True
             else:
-                foto = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+                # Avatar (Genérico)
+                if is_man:
+                    foto = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png" # Avatar Homem
+                else:
+                    foto = "https://cdn-icons-png.flaticon.com/512/3135/3135768.png" # Avatar Mulher
                 nf = False
             
             item = {
@@ -86,6 +105,7 @@ def gerar_dados_ficticios_massivos():
                 'Foto': foto, 'Agenda_Lista': [], 'NF': nf
             }
             data.append(item)
+            
     df = pd.DataFrame(data)
     df['Medalhas'] = df.apply(definir_medalhas, axis=1)
     return df
@@ -150,38 +170,21 @@ def inicializar_session_state():
 
 inicializar_session_state()
 
-# --- 3. ESTILO VISUAL (CSS V64.0 - CORREÇÕES DE CORES E INPUTS) ---
+# --- 3. ESTILO VISUAL (CSS V65.0) ---
 st.markdown("""
     <style>
     :root { color-scheme: light; }
     .stApp { background-color: #ffffff; color: #000000; }
     .block-container { padding: 1rem; padding-bottom: 5rem; }
 
-    /* CORREÇÃO DO CAMPO DE BUSCA PRETO */
-    /* Força fundo branco e texto preto nos inputs e selects */
-    .stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"] {
+    .stTextArea textarea, .stTextInput input, .stSelectbox div[data-baseweb="select"] {
         background-color: #f8f9fa !important;
         color: #000000 !important;
-        -webkit-text-fill-color: #000000 !important; /* Importante para Safari/Mobile */
+        -webkit-text-fill-color: #000000 !important;
         border: 1px solid #ced4da !important;
         border-radius: 8px !important;
     }
-    
-    /* Corrige o menu suspenso do selectbox */
-    div[data-baseweb="select"] > div {
-        background-color: #f8f9fa !important;
-        color: #000000 !important;
-    }
-    div[data-baseweb="menu"] {
-        background-color: #ffffff !important;
-    }
-    div[data-baseweb="option"] {
-        color: #000000 !important;
-    }
-    /* Texto selecionado dentro do box */
-    div[data-baseweb="select"] span {
-        color: #000000 !important;
-    }
+    div[data-baseweb="input"] { background-color: #f8f9fa !important; }
 
     div[data-baseweb="tab-list"] { display: flex; width: 100%; gap: 2px; }
     button[data-baseweb="tab"] {
@@ -236,7 +239,7 @@ def tela_termos():
     if os.path.exists("logo.png"): st.image("logo.png", use_container_width=True)
     else: st.header("⚡ Iluminar Conecta")
     st.markdown("##### 📜 Termos de Uso")
-    texto_termos = """1. AVISO IMPORTANTE: Este é um aplicativo de teste da Iluminar.\n2. RESPONSABILIDADE: A empresa não se responsabiliza pelos serviços contratados.\n3. DADOS: Seus dados serão usados apenas para contato dentro do app.\n4. SEGURANÇA: Não compartilhe senhas financeiras."""
+    texto_termos = """1. AVISO IMPORTANTE: Este é um aplicativo de teste da Iluminar.\n2. RESPONSABILIDADE: A empresa não se responsabiliza pelos serviços contratados diretamente com os prestadores.\n3. DADOS: Seus dados serão usados apenas para contato dentro do app.\n4. SEGURANÇA: Não compartilhe senhas financeiras."""
     st.markdown(f"""<div class="box-termos">{texto_termos.replace(chr(10), "<br>")}</div>""", unsafe_allow_html=True)
     st.markdown(criar_link_download(texto_termos, "termos_uso.txt"), unsafe_allow_html=True)
     st.write("")
@@ -254,6 +257,7 @@ def formulario_cadastro_prestador():
     nome_exibicao = st.text_input("Nome no App (Ex: João Eletricista)")
     categoria = st.selectbox("Sua Categoria", ["Eletricista", "Pedreiro(a)", "Encanador(a)", "Ar-Condicionado", "Gesseiro(a)", "Vidraceiro(a)", "Jardineiro(a)", "Marmorista", "Serviços Gerais"])
     whats = st.text_input("WhatsApp (Com DDD)")
+    
     st.markdown("**Foto de Perfil:**")
     tipo_foto = st.radio("Foto:", ["Enviar Foto Real (Ganha Ouro 🥇)", "Usar Avatar (Ganha Prata 🥈)"])
     foto_final = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
@@ -268,6 +272,7 @@ def formulario_cadastro_prestador():
     else:
         st.warning("Avatar selecionado (Medalha de Prata).")
         medalhas_temp = ['🥈']
+        
     nf = st.checkbox("Emito NF")
     if st.button("CONCLUIR CADASTRO", type="primary"):
         if nome_completo and whats:
@@ -285,12 +290,14 @@ def tela_identificacao():
     if 'tela_cadastro' in st.session_state and st.session_state['tela_cadastro']:
         formulario_cadastro_prestador()
         return
+
     st.markdown("### 👤 Quem é você?")
     st.markdown("##### Para Clientes")
     nome = st.text_input("Seu Nome")
     up = st.file_uploader("Foto (Opcional)", type=['jpg', 'png'])
     if up: st.caption("Nota: Foto simulada para teste.")
     avatar = "https://randomuser.me/api/portraits/women/88.jpg" if up else "https://cdn-icons-png.flaticon.com/512/1077/1077114.png"
+
     if st.button("Sou Cliente (Entrar)", type="primary"):
         st.session_state['usuario'] = {"nome": nome if nome else "Visitante", "tipo": "Cliente", "foto": avatar}
         st.rerun()
@@ -366,8 +373,7 @@ def app_principal():
             df = st.session_state['prestadores']
             filtro = st.session_state['filtro']
             if 'Categoria' in df.columns:
-                # CORREÇÃO: REGEX=FALSE PERMITE BUSCAR PARENTESES
-                df_filtrado = df[df['Categoria'].astype(str).str.contains(filtro, case=False, regex=False, na=False)]
+                df_filtrado = df[df['Categoria'].astype(str).str.contains(filtro, case=False, na=False)]
             else: df_filtrado = pd.DataFrame()
 
             st.write(f"Encontrados: **{len(df_filtrado)} profissionais**")
@@ -395,22 +401,24 @@ def app_principal():
     with aba2:
         st.info("📍 Mapa - Prestadores")
         opcoes_filtro = ["Todos", "Eletricista", "Pedreiro(a)", "Encanador(a)", "Ar-Condicionado", "Gesseiro(a)", "Vidraceiro(a)", "Jardineiro(a)", "Marmorista", "Serviços Gerais"]
-        
         index_padrao = 0
         if st.session_state.get('filtro'):
             for idx, op in enumerate(opcoes_filtro):
-                if st.session_state['filtro'] == op:
+                if st.session_state['filtro'] in op:
                     index_padrao = idx
                     break
-        
         filtro_mapa = st.selectbox("O que você quer buscar?", opcoes_filtro, index=index_padrao)
         
+        # BOTÃO DE BUSCA PRÓXIMA (Simulado)
+        if st.button("📍 Encontrar Profissional Mais Próximo"):
+            st.success("Buscando prestador mais próximo da sua localização atual (Centro)...")
+            st.caption("Resultado: Marcos Costa (300m) - Ver no mapa")
+
         m = folium.Map(location=[-28.6592, -56.0020], zoom_start=13)
         df_mapa = st.session_state['prestadores']
         df_mapa = df_mapa[pd.to_numeric(df_mapa['Latitude'], errors='coerce').notnull()]
         
         if filtro_mapa != "Todos":
-            # CORREÇÃO: REGEX=FALSE TAMBÉM NO MAPA
             df_mapa = df_mapa[df_mapa['Categoria'].astype(str).str.contains(filtro_mapa, case=False, regex=False, na=False)]
 
         icones_mapa = {
@@ -425,7 +433,11 @@ def app_principal():
                 if chave in row['Categoria']:
                     icone_nome = valor
                     break
-            folium.Marker([row['Latitude'], row['Longitude']], popup=row['Nome'], icon=folium.Icon(color='orange', icon=icone_nome, prefix='fa')).add_to(m)
+            folium.Marker(
+                [row['Latitude'], row['Longitude']], 
+                popup=row['Nome'], 
+                icon=folium.Icon(color='orange', icon=icone_nome, prefix='fa')
+            ).add_to(m)
         st_folium(m, width=700, height=400)
 
     with aba3:
