@@ -4,7 +4,7 @@ import folium
 from streamlit_folium import st_folium
 import os
 import base64
-from datetime import date
+import random
 
 # --- 1. CONFIGURAÇÃO ---
 st.set_page_config(page_title="Iluminar Conecta", page_icon="💡", layout="centered")
@@ -26,27 +26,68 @@ def criar_link_download(texto, filename):
     return f'<a href="data:text/plain;base64,{b64}" download="{filename}" style="color: #666; font-size: 12px; text-decoration: underline;">📥 Baixar Termos de Uso (PDF/Txt)</a>'
 
 def gerar_estrelas_html(nota):
-    try:
-        nota_float = float(nota)
-    except:
-        nota_float = 5.0
+    try: nota_float = float(nota)
+    except: nota_float = 5.0
     n_cheias = int(round(nota_float))
-    n_vazias = 5 - n_cheias
-    estrelas = "★" * n_cheias + "☆" * n_vazias
-    return f'<span style="color: #FF8C00; font-size: 15px; letter-spacing: 1px;">{estrelas}</span> <span style="font-size: 11px; color: #666; font-weight: bold;">{nota}</span>'
+    estrelas = "★" * n_cheias + "☆" * (5 - n_cheias)
+    return f'<span style="color: #FF8C00; font-size: 15px;">{estrelas}</span> <span style="font-size: 11px; color: #666; font-weight: bold;">{nota}</span>'
 
 def definir_medalhas(row):
     foto = str(row['Foto']).lower()
+    # Se for link generico ou avatar = Prata, senão Ouro
     if "flaticon" in foto or "avatar" in foto or foto == "" or "3135715" in foto:
         return ['🥈']
     else:
         return ['🥇', '⚡']
 
+def gerar_dados_ficticios_massivos():
+    """Gera 10 profissionais para cada categoria para o Backup"""
+    categorias = [
+        "Eletricista", "Pedreiro", "Encanador", "Ar-Condicionado", 
+        "Gesseiro", "Vidraceiro", "Jardineiro", "Marmorista", "Serviços Gerais"
+    ]
+    
+    nomes_base = ["Carlos", "João", "Roberto", "Paulo", "Marcos", "José", "Luiz", "Ana", "Maria", "Pedro", "Lucas", "Fernanda", "Rafael", "Bruno"]
+    sobrenomes = ["Silva", "Santos", "Oliveira", "Souza", "Lima", "Ferreira", "Costa", "Pereira", "Almeida", "Nascimento"]
+    
+    data = []
+    
+    for cat in categorias:
+        for i in range(10): # 10 por categoria
+            nome_completo = f"{random.choice(nomes_base)} {random.choice(sobrenomes)}"
+            # Alterna entre Foto Real (Ouro) e Avatar (Prata)
+            if i % 2 == 0:
+                foto = f"https://randomuser.me/api/portraits/{'women' if i%3==0 else 'men'}/{random.randint(1,99)}.jpg"
+                nf = True
+            else:
+                foto = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+                nf = False
+                
+            item = {
+                'Nome': nome_completo,
+                'Categoria': cat,
+                'Whatsapp': '555599999999',
+                'Latitude': -28.6590 + (random.uniform(-0.01, 0.01)),
+                'Longitude': -56.0020 + (random.uniform(-0.01, 0.01)),
+                'Status': 'Disponível',
+                'Nota': round(random.uniform(4.5, 5.0), 1),
+                'Foto': foto,
+                'Agenda_Lista': [],
+                'NF': nf
+            }
+            data.append(item)
+            
+    df = pd.DataFrame(data)
+    df['Medalhas'] = df.apply(definir_medalhas, axis=1)
+    return df
+
 def carregar_dados_planilha():
     df = pd.DataFrame()
     try:
         df = pd.read_csv(SHEET_URL)
-        if len(df) == 0: raise Exception("Planilha Vazia")
+        if len(df) == 0: raise Exception("Vazia")
+        
+        # Tratamento
         if 'Agenda' not in df.columns: df['Agenda'] = ""
         df['Agenda'] = df['Agenda'].fillna("").astype(str)
         df['Agenda_Lista'] = df['Agenda'].apply(lambda x: [d.strip() for d in x.split(',')] if x.strip() != "" else [])
@@ -55,122 +96,119 @@ def carregar_dados_planilha():
         df['Longitude'] = pd.to_numeric(df['Longitude'], errors='coerce')
         if 'NF' not in df.columns: df['NF'] = False
         else: df['NF'] = df['NF'].astype(bool)
+        
         def corrigir_foto(f):
             if pd.isna(f) or str(f).strip() == '': return "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
             return f 
-        df = df.loc[:,~df.columns.duplicated()]
-        if 'Foto' in df.columns: df['Foto'] = df['Foto'].apply(corrigir_foto)
-        else: df['Foto'] = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+        df['Foto'] = df['Foto'].apply(corrigir_foto)
         df['Medalhas'] = df.apply(definir_medalhas, axis=1)
+        
     except Exception:
-        data = {
-            'Nome': ['Roberto Eletricista (Backup)', 'Carlos Avatar (Backup)'],
-            'Categoria': ['Eletricista', 'Eletricista'],
-            'Whatsapp': ['555599999999', '555599999999'],
-            'Latitude': [-28.6592, -28.6600],
-            'Longitude': [-56.0020, -56.0050],
-            'Status': ['Disponível', 'Disponível'],
-            'Nota': [5.0, 4.5],
-            'Foto': ["https://randomuser.me/api/portraits/men/99.jpg", "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"],
-            'Agenda_Lista': [[], []],
-            'NF': [True, False]
-        }
-        df = pd.DataFrame(data)
-        df['Medalhas'] = df.apply(definir_medalhas, axis=1)
+        # USA O GERADOR MASSIVO
+        df = gerar_dados_ficticios_massivos()
+        
     return df
 
 def inicializar_session_state():
     if 'usuario' not in st.session_state: st.session_state['usuario'] = None
     if 'aceitou_termos' not in st.session_state: st.session_state['aceitou_termos'] = False
+    
+    # --- MURAL MASSIVO ---
     if 'mural_posts' not in st.session_state:
-        st.session_state['mural_posts'] = [
-            {"id": 1, "autor": "Ana Silva", "avatar": "https://randomuser.me/api/portraits/women/44.jpg", "texto": "Procuro eletricista.", "respostas": [], "denuncias": 0},
-            {"id": 2, "autor": "Marcos", "avatar": "https://randomuser.me/api/portraits/men/32.jpg", "texto": "Vendo cimento.", "respostas": [], "denuncias": 0}
+        # Gera 15 comentários variados
+        comentarios = [
+            ("Ana Silva", "women/44.jpg", "Alguém indica um eletricista urgente para o bairro Centro?"),
+            ("Marcos Oliveira", "men/32.jpg", "Sobraram 2 sacos de cimento. Vendo barato. Whatsapp: 55 99..."),
+            ("Clara Souza", "women/68.jpg", "Preciso de frete para geladeira. Entre em contato comigo!"),
+            ("Roberto Santos", "men/85.jpg", "Procuro pedreiro para reforma. Orçamento sem compromisso."),
+            ("Luciana Ferreira", "women/12.jpg", "Alguém conhece jardineiro para poda? Entre em contato."),
+            ("Ricardo Gomes", "men/11.jpg", "Instalador de ar condicionado para sábado?"),
+            ("Fernanda Lima", "women/90.jpg", "Quem faz limpeza de caixa d'água? Preciso urgente."),
+            ("Paulo Ricardo", "men/45.jpg", "Preciso de vidraceiro. Entre em contato comigo no privado."),
+            ("Juliana Costa", "women/22.jpg", "Procuro diarista para pós-obra. Pago bem."),
+            ("Bruno Alves", "men/55.jpg", "Vendo restos de piso porcelanato. Entre em contato."),
+            ("Carla Dias", "women/33.jpg", "Indicação de encanador para vazamento oculto?"),
+            ("Felipe Neto", "men/66.jpg", "Preciso de eletricista para instalar chuveiro."),
+            ("Amanda Luz", "women/15.jpg", "Alguém sabe quem faz frete de sofá? Entre em contato comigo."),
+            ("Diego Show", "men/10.jpg", "Marmorista disponível para balcão de cozinha?"),
+            ("Sonia Abrão", "women/70.jpg", "Preciso de marido de aluguel para pendurar quadros.")
         ]
+        posts = []
+        for i, (nome, img, texto) in enumerate(comentarios):
+            posts.append({
+                "id": i, 
+                "autor": nome, 
+                "avatar": f"https://randomuser.me/api/portraits/{img}", 
+                "texto": texto,
+                "respostas": [], "denuncias": 0
+            })
+        st.session_state['mural_posts'] = posts
+    
     if 'prestadores' not in st.session_state:
         st.session_state['prestadores'] = carregar_dados_planilha()
 
 inicializar_session_state()
 
-# --- 3. ESTILO VISUAL CORRIGIDO (CSS V57.0) ---
+# --- 3. ESTILO VISUAL (CSS V58.0 - CORREÇÃO DE GRID) ---
 st.markdown("""
     <style>
     :root { color-scheme: light; }
     .stApp { background-color: #ffffff; color: #000000; }
     .block-container { padding: 1rem; padding-bottom: 5rem; }
 
-    /* 1. CORREÇÃO DOS ÍCONES SOCIAIS (CENTRALIZADOS) */
-    .social-container { 
-        display: flex; 
-        justify-content: center; 
-        align-items: center; 
-        gap: 40px; 
-        margin-top: 15px; 
-        margin-bottom: 25px; 
-        width: 100%;
-    }
+    /* 1. CORREÇÃO DOS ÍCONES SOCIAIS */
+    .social-container { display: flex; justify-content: center; gap: 40px; margin-top: 15px; margin-bottom: 25px; width: 100%; }
     .insta-original img { filter: grayscale(100%) brightness(0) !important; }
-    .social-icon img:hover { transform: scale(1.1); transition: 0.3s; }
 
-    /* 2. BOTÕES DE LOGIN (RETANGULARES E LARGOS) */
-    /* Isso garante que os botões de 'Entrar' não fiquem redondos */
-    div[data-testid="column"] button {
+    /* 2. BOTÕES DE LOGIN (RETANGULARES) - SELETOR ESPECÍFICO */
+    /* Afeta apenas botões dentro de colunas verticais (telas de login/cadastro) */
+    div[data-testid="column"] > div > div > div > div > button {
         border-radius: 12px !important;
         width: 100% !important;
         border: 1px solid #FF8C00 !important;
         font-size: 16px !important;
-        padding: 10px !important;
+        padding: 12px !important;
+        height: auto !important;
     }
 
-    /* 3. ÍCONES DE CATEGORIA (REDONDOS/CÍRCULOS) */
-    /* Aplica estilo redondo APENAS aos botões da grade de categorias */
+    /* 3. ÍCONES DE CATEGORIA (REDONDOS NA GRADE) */
+    /* Afeta apenas botões dentro da grade horizontal */
     div[data-testid="stHorizontalBlock"] button {
         border-radius: 50% !important;
-        width: 80px !important;
-        height: 80px !important;
+        width: 75px !important; /* Ajuste para caber 3 */
+        height: 75px !important;
         padding: 0 !important;
-        font-size: 40px !important;
+        font-size: 35px !important;
         line-height: 1 !important;
         box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
         margin: 0 auto !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
+        display: flex !important; align-items: center !important; justify-content: center !important;
     }
 
-    /* Estilo do botão selecionado (Laranja) */
     div[data-testid="stHorizontalBlock"] button[kind="primary"] {
-        background-color: #FF8C00 !important;
-        border: 2px solid #FF8C00 !important;
-        color: #FFFF00 !important; /* Raio Amarelo */
-        text-shadow: 1px 1px 1px #333;
+        background-color: #FF8C00 !important; border: 2px solid #FF8C00 !important;
+        color: #FFFF00 !important; text-shadow: 1px 1px 1px #333;
     }
-
-    /* Estilo do botão normal (Branco) */
+    
     div[data-testid="stHorizontalBlock"] button[kind="secondary"] {
-        background-color: white !important;
-        border: 2px solid #FF8C00 !important;
-        color: black !important;
+        background-color: white !important; border: 2px solid #FF8C00 !important; color: black !important;
     }
 
-    /* 4. ABAS E OUTROS ELEMENTOS */
+    /* 4. LAYOUT GERAL */
     button[data-baseweb="tab"] { background-color: #f8f9fa !important; color: #666 !important; font-weight: bold !important; border: none !important; }
     button[aria-selected="true"] { background-color: #FF8C00 !important; color: white !important; }
     
     .btn-whatsapp { display: block; width: 100%; background-color: #25D366; color: white !important; text-align: center; padding: 10px; border-radius: 20px; text-decoration: none; font-weight: bold; font-size: 14px; margin-top: 5px; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-    
     .card-profissional { background-color: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 15px; border-left: 5px solid #FF8C00; width: 100%; }
-    
     .sticky-aviso { position: sticky; top: 0; z-index: 1000; background-color: #FF8C00; color: white !important; text-align: center; padding: 10px; font-weight: bold; font-size: 12px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 15px; }
-    
     .ofertas-container { display: flex; overflow-x: auto; gap: 10px; padding-bottom: 10px; scrollbar-width: none; width: 100%; }
     .oferta-item { flex: 0 0 auto; width: 85%; max-width: 320px; border-radius: 10px; overflow: hidden; border: 1px solid #eee; }
     .oferta-item img, .oferta-item video { width: 100%; height: auto; display: block; }
-    .box-termos { height: 150px; overflow-y: scroll; background-color: #f8f9fa; border: 1px solid #ced4da; padding: 10px; border-radius: 8px; font-size: 12px; color: #000 !important; margin-bottom: 15px; text-align: justify; }
-    
-    /* Input do Mural mais bonito */
-    .stTextArea textarea { border-radius: 10px !important; border: 1px solid #ddd !important; }
     .rotulo-icone { display: block; width: 100%; text-align: center; font-size: 11px; font-weight: bold; color: #444 !important; margin-top: 5px; line-height: 1.2; }
+    
+    /* Força grid de 3 colunas */
+    div[data-testid="stHorizontalBlock"] { display: grid !important; grid-template-columns: repeat(3, 1fr) !important; gap: 10px !important; }
+    div[data-testid="column"] { min-width: 0 !important; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -180,52 +218,45 @@ def tela_termos():
     if os.path.exists("logo.png"): st.image("logo.png", use_container_width=True)
     else: st.header("⚡ Iluminar Conecta")
     st.markdown("##### 📜 Termos de Uso")
-    texto_termos = """1. AVISO IMPORTANTE: Este é um aplicativo de teste da Iluminar.\n2. RESPONSABILIDADE: A empresa não se responsabiliza pelos serviços contratados.\n3. DADOS: Seus dados serão usados apenas para contato dentro do app.\n4. SEGURANÇA: Não compartilhe senhas financeiras."""
-    st.markdown(f"""<div class="box-termos">{texto_termos.replace(chr(10), "<br>")}</div>""", unsafe_allow_html=True)
-    st.write("")
+    st.markdown("1. Aplicativo de teste.\n2. Dados simulados.")
     aceite = st.checkbox("Li os termos de uso, concordo e aceito.")
     if aceite:
-        st.write("")
-        if st.button("AVANÇAR", type="primary"): # Botão retangular pelo CSS global da coluna
+        if st.button("AVANÇAR", type="primary"): 
             st.session_state['aceitou_termos'] = True
             st.rerun()
 
 def formulario_cadastro_prestador():
     st.markdown("### 📝 Cadastro de Prestador")
-    st.info("Preencha todos os campos para se cadastrar.")
-    
+    st.info("Preencha todos os campos.")
     nome_completo = st.text_input("Nome Completo (Obrigatório)")
-    cpf = st.text_input("CPF (Somente números)", max_chars=11)
-    nome_exibicao = st.text_input("Nome que aparecerá no App (Ex: João Eletricista)")
+    cpf = st.text_input("CPF (Somente números)")
+    nome_exibicao = st.text_input("Nome no App (Ex: João Eletricista)")
     categoria = st.selectbox("Sua Categoria", ["Eletricista", "Pedreiro", "Encanador", "Ar-Condicionado", "Gesseiro", "Vidraceiro", "Jardineiro", "Marmorista", "Serviços Gerais"])
-    whats = st.text_input("WhatsApp de Trabalho (Com DDD)", placeholder="555599999999")
+    whats = st.text_input("WhatsApp (Com DDD)")
     
     st.markdown("**Foto de Perfil:**")
-    tipo_foto = st.radio("Como você quer aparecer?", ["Enviar Foto Real (Ganha Medalha de Ouro 🥇)", "Usar Avatar (Ganha Medalha de Prata 🥈)"])
+    tipo_foto = st.radio("Foto:", ["Enviar Foto Real (Ganha Ouro 🥇)", "Usar Avatar (Ganha Prata 🥈)"])
     foto_final = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
     medalhas_temp = []
     
     if "Enviar Foto Real" in tipo_foto:
-        uploaded_file = st.file_uploader("Envie sua foto ou tire uma selfie", type=['jpg', 'png', 'jpeg'])
-        if uploaded_file is not None:
+        uploaded = st.file_uploader("Sua foto", type=['jpg', 'png'])
+        if uploaded:
             foto_final = "https://randomuser.me/api/portraits/men/99.jpg"
             medalhas_temp = ['🥇', '⚡']
-            st.success("Foto recebida! Medalha de Ouro garantida.")
+            st.success("Foto OK! Medalha de Ouro.")
     else:
-        st.warning("⚠️ Nota: Cadastros com Avatar recebem Medalha de Prata.")
+        st.warning("Avatar selecionado (Medalha de Prata).")
         medalhas_temp = ['🥈']
         
-    nota_fiscal = st.checkbox("Emito Nota Fiscal")
-    termos_resp = st.checkbox("Declaro que as informações são verdadeiras.")
-    
+    nf = st.checkbox("Emito NF")
     if st.button("CONCLUIR CADASTRO", type="primary"):
-        if nome_completo and whats and nome_exibicao and termos_resp:
-            novo_prestador = {'Nome': nome_exibicao, 'Categoria': categoria, 'Whatsapp': whats, 'Latitude': -28.6592, 'Longitude': -56.0020, 'Status': 'Disponível', 'Nota': 5.0, 'Foto': foto_final, 'Agenda_Lista': [], 'Medalhas': medalhas_temp, 'NF': nota_fiscal}
-            novo_df = pd.DataFrame([novo_prestador])
-            st.session_state['prestadores'] = pd.concat([novo_df, st.session_state['prestadores']], ignore_index=True)
+        if nome_completo and whats:
+            novo = {'Nome': nome_exibicao, 'Categoria': categoria, 'Whatsapp': whats, 'Latitude': -28.6592, 'Longitude': -56.0020, 'Status': 'Disponível', 'Nota': 5.0, 'Foto': foto_final, 'Agenda_Lista': [], 'Medalhas': medalhas_temp, 'NF': nf}
+            df_novo = pd.DataFrame([novo])
+            st.session_state['prestadores'] = pd.concat([df_novo, st.session_state['prestadores']], ignore_index=True)
             st.session_state['usuario'] = {"nome": nome_exibicao, "tipo": "Prestador de Serviços", "whats": whats, "medalhas": medalhas_temp}
             st.rerun()
-        else: st.error("Preencha os campos obrigatórios.")
     if st.button("Voltar"):
         st.session_state['tela_cadastro'] = False
         st.rerun()
@@ -240,19 +271,14 @@ def tela_identificacao():
     st.markdown("### 👤 Quem é você?")
     
     st.markdown("##### Para Clientes")
-    nome = st.text_input("Seu Nome (Opcional)")
-    uploaded_cliente = st.file_uploader("Sua Foto (Opcional - Câmera ou Galeria)", type=['jpg', 'png', 'jpeg'], key="foto_cliente")
+    nome = st.text_input("Seu Nome")
+    up = st.file_uploader("Foto (Opcional)", type=['jpg', 'png'])
+    if up: st.caption("Nota: Foto simulada para teste.")
     
-    if uploaded_cliente:
-        st.caption("ℹ️ Nota: Como é um protótipo, o sistema simula o salvamento da foto.")
-    
-    avatar_cliente = "https://cdn-icons-png.flaticon.com/512/1077/1077114.png" 
-    if uploaded_cliente:
-        avatar_cliente = "https://randomuser.me/api/portraits/women/88.jpg" 
+    avatar = "https://randomuser.me/api/portraits/women/88.jpg" if up else "https://cdn-icons-png.flaticon.com/512/1077/1077114.png"
 
-    # Botões Retangulares (Via CSS Global da Coluna)
     if st.button("Sou Cliente (Entrar)", type="primary"):
-        st.session_state['usuario'] = {"nome": nome if nome else "Visitante", "tipo": "Cliente", "foto": avatar_cliente}
+        st.session_state['usuario'] = {"nome": nome if nome else "Visitante", "tipo": "Cliente", "foto": avatar}
         st.rerun()
             
     st.divider()
@@ -265,55 +291,13 @@ def tela_identificacao():
         st.session_state['usuario'] = {"nome": "Prestador", "tipo": "Prestador de Serviços"}
         st.rerun()
 
-def html_ofertas():
-    html_content = ""
-    for i in range(1, 6):
-        if os.path.exists(f"oferta{i}.mp4"):
-            b64 = get_media_base64(f"oferta{i}.mp4")
-            html_content += f'<div class="oferta-item"><video autoplay loop muted playsinline width="100%"><source src="data:video/mp4;base64,{b64}" type="video/mp4"></video></div>'
-        elif os.path.exists(f"oferta{i}.jpg"):
-            b64 = get_media_base64(f"oferta{i}.jpg")
-            html_content += f'<div class="oferta-item"><img src="data:image/jpeg;base64,{b64}"></div>'
-    
-    if not html_content:
-        html_content = f'<div class="oferta-item"><img src="https://via.placeholder.com/300x200/FF8C00/FFFFFF?text=Ofertas"></div>'
-    return f"""<div class="ofertas-container">{html_content}</div>"""
-
-def html_parceiros_dinamico():
-    html_content = ""
-    for i in range(1, 6):
-        nome_base = f"parceiro{i}"
-        if os.path.exists(f"{nome_base}.mp4"):
-            b64 = get_media_base64(f"{nome_base}.mp4")
-            html_content += f'<div class="oferta-item" style="width: 150px;"><video autoplay loop muted playsinline width="100%"><source src="data:video/mp4;base64,{b64}" type="video/mp4"></video></div>'
-        elif os.path.exists(f"{nome_base}.gif"):
-            b64 = get_media_base64(f"{nome_base}.gif")
-            html_content += f'<div class="oferta-item" style="width: 150px;"><img src="data:image/gif;base64,{b64}"></div>'
-        elif os.path.exists(f"{nome_base}.jpg"):
-            b64 = get_media_base64(f"{nome_base}.jpg")
-            html_content += f'<div class="oferta-item" style="width: 150px;"><img src="data:image/jpeg;base64,{b64}"></div>'
-    
-    if not html_content:
-        html_content = '<div style="text-align:center; color:#999; width:100%;">Em breve</div>'
-        
-    return f"""<div class="ofertas-container" style="justify-content: center;">{html_content}</div>"""
-
 def app_principal():
     if os.path.exists("logo.png"): st.image("logo.png", use_container_width=True) 
     else: st.title("⚡ Iluminar Conecta")
 
     insta_url = "https://www.instagram.com/iluminarsb"
     whats_url = "https://wa.me/5555999900048"
-    icon_insta = "https://cdn-icons-png.flaticon.com/512/1384/1384031.png"
-    icon_whats_vasado = "https://cdn-icons-png.flaticon.com/512/220/220236.png"
-
-    # HTML CORRIGIDO PARA ÍCONES SOCIAIS
-    st.markdown(f"""
-    <div class="social-container">
-        <a href="{insta_url}" target="_blank" class="social-icon insta-original"><img src="{icon_insta}" width="35" height="35"></a>
-        <a href="{whats_url}" target="_blank" class="social-icon"><img src="{icon_whats_vasado}" width="35" height="35"></a>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(f"""<div class="social-container"><a href="{insta_url}" target="_blank"><img src="https://cdn-icons-png.flaticon.com/512/1384/1384031.png" width="35" class="insta-original"></a><a href="{whats_url}" target="_blank"><img src="https://cdn-icons-png.flaticon.com/512/220/220236.png" width="35"></a></div>""", unsafe_allow_html=True)
 
     aba1, aba2, aba3, aba4, aba5 = st.tabs(["🏠 Início", "🗺️ Mapa", "💬 Mural", "🤝 Parceiros", "👤 Perfil"])
     
@@ -321,11 +305,12 @@ def app_principal():
         st.markdown("##### 🛠️ Categorias")
         if 'filtro' not in st.session_state: st.session_state['filtro'] = ""
 
+        # GRID 3 COLUNAS - GARANTIDO
         c1, c2, c3 = st.columns(3)
         def btn_cat(col, icone, nome, chave):
-            tipo_botao = "primary" if st.session_state['filtro'] == chave else "secondary"
+            tipo = "primary" if st.session_state['filtro'] == chave else "secondary"
             with col:
-                if st.button(icone, key=f"btn_{chave}", type=tipo_botao): 
+                if st.button(icone, key=f"btn_{chave}", type=tipo): 
                     st.session_state['filtro'] = chave
                     st.rerun()
                 st.markdown(f'<div class="rotulo-icone">{nome}</div>', unsafe_allow_html=True)
@@ -344,7 +329,13 @@ def app_principal():
         btn_cat(c8, "🪨", "Marmorista", "Marmorista")
         btn_cat(c9, "🛠️", "Serv. Gerais", "Serviços Gerais")
 
-        ofertas_html = html_ofertas()
+        ofertas_html = ""
+        for i in range(1,6):
+            if os.path.exists(f"oferta{i}.jpg"):
+                b64 = get_media_base64(f"oferta{i}.jpg")
+                ofertas_html += f'<div class="oferta-item"><img src="data:image/jpeg;base64,{b64}"></div>'
+        if not ofertas_html: ofertas_html = '<div class="oferta-item"><img src="https://via.placeholder.com/300x200/FF8C00/FFFFFF?text=Ofertas"></div>'
+        st.markdown(f"""<div class="ofertas-container">{ofertas_html}</div>""", unsafe_allow_html=True)
 
         if st.session_state['filtro'] != "":
             st.write("")
@@ -354,8 +345,7 @@ def app_principal():
             filtro = st.session_state['filtro']
             if 'Categoria' in df.columns:
                 df_filtrado = df[df['Categoria'].astype(str).str.contains(filtro, case=False, na=False)]
-            else:
-                df_filtrado = pd.DataFrame() 
+            else: df_filtrado = pd.DataFrame()
 
             st.write(f"Encontrados: **{len(df_filtrado)} profissionais**")
             
@@ -363,55 +353,22 @@ def app_principal():
             df_filtrado = df_filtrado.sort_values(by=['Ordem_Medalha', 'Nota'], ascending=[True, False])
             
             for i, row in df_filtrado.iterrows():
-                lista_medalhas = row['Medalhas'] if isinstance(row['Medalhas'], list) else []
-                medalhas = " ".join(lista_medalhas)
-                estrelas_html = gerar_estrelas_html(row['Nota'])
+                meds = " ".join(row['Medalhas'])
                 nf_html = '<span style="background-color:#E3F2FD; color:#1565C0; padding:2px 6px; border-radius:4px; font-size:10px; margin-left:5px;">📄 NF</span>' if row.get('NF') else ''
-                agenda_html = ""
-                if len(row['Agenda_Lista']) > 0:
-                    dias_texto = ", ".join(row['Agenda_Lista'])
-                    agenda_html = f'<div style="color: #D32F2F; font-size: 11px; margin-top: 5px; font-weight: bold;">📅 Ocupado em: {dias_texto}</div>'
-
-                with st.container():
-                    # HTML DO CARD (SEM IDENTAÇÃO PARA NÃO VAZAR)
-                    card_html = "".join([
-                        f'<div class="card-profissional">',
-                        f'<div style="display: flex; align-items: center;">',
-                        f'<img src="{row["Foto"]}" style="border-radius: 50%; width: 55px; height: 55px; margin-right: 15px; border: 2px solid #EEE; object-fit: cover;">',
-                        f'<div>',
-                        f'<div style="font-weight:bold; color:#333;">{row["Nome"]} {medalhas}</div>',
-                        f'<div style="color:#666; font-size:12px; margin-bottom: 2px;">{row["Categoria"]}</div>',
-                        f'<div>{estrelas_html} {nf_html} <span style="color:#888; font-size:10px;">• {row["Status"]}</span></div>',
-                        f'{agenda_html}',
-                        f'</div></div>',
-                        f'<a href="https://wa.me/{row["Whatsapp"]}" target="_blank" class="btn-whatsapp">📲 Chamar no WhatsApp</a>',
-                        f'</div>'
-                    ])
-                    st.markdown(card_html, unsafe_allow_html=True)
-
-            st.divider()
-            st.markdown("##### 🔥 Aproveite também")
-            st.markdown(ofertas_html, unsafe_allow_html=True)
-
-        else:
-            st.divider()
-            st.markdown("##### 🔥 Ofertas da Semana")
-            st.markdown(ofertas_html, unsafe_allow_html=True)
-            st.write("")
-            st.info("👆 Toque em uma categoria acima para ver os profissionais disponíveis.")
-            st.divider()
-            st.markdown("###### 📢 Parceiros em Destaque")
-            st.markdown(html_parceiros_dinamico(), unsafe_allow_html=True)
+                
+                card = "".join([
+                    f'<div class="card-profissional"><div style="display:flex; align-items:center;">',
+                    f'<img src="{row["Foto"]}" style="border-radius:50%; width:55px; height:55px; margin-right:15px; border:2px solid #EEE; object-fit:cover;">',
+                    f'<div><div style="font-weight:bold; color:#333;">{row["Nome"]} {meds}</div>',
+                    f'<div style="color:#666; font-size:12px;">{row["Categoria"]}</div>',
+                    f'<div>{gerar_estrelas_html(row["Nota"])} {nf_html}</div>',
+                    f'</div></div><a href="https://wa.me/{row["Whatsapp"]}" target="_blank" class="btn-whatsapp">📲 Chamar no WhatsApp</a></div>'
+                ])
+                st.markdown(card, unsafe_allow_html=True)
 
     with aba2:
-        st.write("")
-        st.info("📍 Prestadores na região")
+        st.info("📍 Mapa")
         m = folium.Map(location=[-28.6592, -56.0020], zoom_start=14)
-        df_mapa = st.session_state['prestadores']
-        if 'Latitude' in df_mapa.columns and 'Longitude' in df_mapa.columns:
-            df_mapa = df_mapa.dropna(subset=['Latitude', 'Longitude'])
-            for i, row in df_mapa.iterrows():
-                folium.Marker([row['Latitude'], row['Longitude']], popup=row['Nome'], icon=folium.Icon(color='orange', icon='bolt', prefix='fa')).add_to(m)
         st_folium(m, width=700, height=400)
 
     with aba3:
@@ -429,37 +386,23 @@ def app_principal():
         st.divider()
         st.markdown("##### ✏️ Nova Mensagem")
         with st.form("novo_post"):
-            texto_post = st.text_area("O que você precisa?", max_chars=300)
-            if st.form_submit_button("Publicar", type="secondary"):
-                st.success("Publicado!")
+            st.text_area("Mensagem")
+            st.form_submit_button("Publicar")
 
     with aba4:
         st.markdown("### 🤝 Parceiros")
-        st.markdown(html_parceiros_dinamico(), unsafe_allow_html=True)
-        st.info("Quer ser um parceiro? Entre em contato!")
+        st.info("Contato para parcerias: (55) 99...")
 
     with aba5:
         usuario = st.session_state['usuario']
         st.header(f"Olá, {usuario['nome']}")
-        st.caption(f"Perfil: {usuario['tipo']}")
         
-        if usuario['tipo'] == 'Prestador de Serviços':
-            st.divider()
-            medalhas_usr = usuario.get('medalhas', [])
-            if '🥇' in medalhas_usr: st.success("🏆 Você possui Medalha de Ouro! (Foto Real validada)")
-            elif '🥈' in medalhas_usr: st.warning("🥈 Você possui Medalha de Prata (Avatar). Envie uma foto real para ganhar Ouro.")
-            ativo = st.toggle("Ativo para Trabalho", value=True)
-            if not ativo: st.warning("Você está invisível nas buscas.")
-        
-        # Correção do Erro da Foto do Cliente
-        if usuario['tipo'] == 'Cliente' and usuario.get('foto'):
-             st.image(usuario['foto'], width=100) # Removeu estilo inline quebrado
-
-        st.divider()
-        # Botão Sair Retangular
-        if st.button("Sair da Conta", type="secondary"):
+        # Proteção para foto do perfil
+        if usuario.get('foto'):
+            st.markdown(f'<img src="{usuario["foto"]}" style="width:100px; border-radius:50%;">', unsafe_allow_html=True)
+            
+        if st.button("Sair"):
             st.session_state['usuario'] = None
-            st.session_state['aceitou_termos'] = False
             st.rerun()
 
 if not st.session_state['aceitou_termos']: tela_termos()
