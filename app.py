@@ -39,7 +39,6 @@ def carregar_dados_planilha():
     df = pd.DataFrame()
     try:
         df = pd.read_csv(SHEET_URL)
-        
         if len(df) == 0: raise Exception("Planilha Vazia")
 
         if 'Agenda' not in df.columns: df['Agenda'] = ""
@@ -101,14 +100,15 @@ def inicializar_session_state():
     if 'usuario' not in st.session_state: st.session_state['usuario'] = None
     if 'aceitou_termos' not in st.session_state: st.session_state['aceitou_termos'] = False
     
-    # --- MURAL COM MENSAGENS E FOTOS FICTÍCIAS (AVATARES) ---
+    # --- MURAL COM FOTOS REALISTAS (URLs públicas) ---
     if 'mural_posts' not in st.session_state:
         st.session_state['mural_posts'] = [
-            {"id": 1, "autor": "Ana Silva", "avatar": "https://cdn-icons-png.flaticon.com/512/4128/4128244.png", "texto": "Alguém indica um eletricista urgente para o bairro Centro? Minha luz caiu.", "respostas": [], "denuncias": 0},
-            {"id": 2, "autor": "Marcos Oliveira", "avatar": "https://cdn-icons-png.flaticon.com/512/4128/4128176.png", "texto": "Sobraram 2 sacos de cimento da minha obra. Vendo barato. Whatsapp: 55 99...", "respostas": [], "denuncias": 0},
-            {"id": 3, "autor": "Clara Souza", "avatar": "https://cdn-icons-png.flaticon.com/512/4128/4128359.png", "texto": "Preciso de indicação de frete pequeno para levar uma geladeira até o Pirahy.", "respostas": [], "denuncias": 0},
-            {"id": 4, "autor": "Roberto Santos", "avatar": "https://cdn-icons-png.flaticon.com/512/4128/4128262.png", "texto": "Procuro pedreiro para pequena reforma no banheiro. Orçamento sem compromisso.", "respostas": [], "denuncias": 0},
-            {"id": 5, "autor": "Luciana Ferreira", "avatar": "https://cdn-icons-png.flaticon.com/512/4128/4128409.png", "texto": "Alguém conhece um bom jardineiro para poda de árvore grande?", "respostas": [], "denuncias": 0}
+            {"id": 1, "autor": "Ana Silva", "avatar": "https://randomuser.me/api/portraits/women/44.jpg", "texto": "Alguém indica um eletricista urgente para o bairro Centro? Minha luz caiu.", "respostas": [], "denuncias": 0},
+            {"id": 2, "autor": "Marcos Oliveira", "avatar": "https://randomuser.me/api/portraits/men/32.jpg", "texto": "Sobraram 2 sacos de cimento da minha obra. Vendo barato. Whatsapp: 55 99...", "respostas": [], "denuncias": 0},
+            {"id": 3, "autor": "Clara Souza", "avatar": "https://randomuser.me/api/portraits/women/68.jpg", "texto": "Preciso de indicação de frete pequeno para levar uma geladeira até o Pirahy.", "respostas": [], "denuncias": 0},
+            {"id": 4, "autor": "Roberto Santos", "avatar": "https://randomuser.me/api/portraits/men/85.jpg", "texto": "Procuro pedreiro para pequena reforma no banheiro. Orçamento sem compromisso.", "respostas": [], "denuncias": 0},
+            {"id": 5, "autor": "Luciana Ferreira", "avatar": "https://randomuser.me/api/portraits/women/12.jpg", "texto": "Alguém conhece um bom jardineiro para poda de árvore grande?", "respostas": [], "denuncias": 0},
+            {"id": 6, "autor": "Ricardo Gomes", "avatar": "https://randomuser.me/api/portraits/men/11.jpg", "texto": "Instalador de ar condicionado disponível para sábado?", "respostas": [], "denuncias": 0}
         ]
     
     if 'prestadores' not in st.session_state:
@@ -116,7 +116,7 @@ def inicializar_session_state():
 
 inicializar_session_state()
 
-# --- 3. ESTILO VISUAL (CSS V51.0 - ÍCONES RETANGULARES ARREDONDADOS) ---
+# --- 3. ESTILO VISUAL (CSS V52.0 - CÍRCULOS PERFEITOS) ---
 st.markdown("""
     <style>
     :root { color-scheme: light; }
@@ -139,30 +139,29 @@ st.markdown("""
     .stRadio label p { color: #FF8C00 !important; font-weight: bold !important; font-size: 18px !important; }
     div[role="radiogroup"] [aria-checked="true"] > div:first-child { background-color: #FF8C00 !important; border-color: #FF8C00 !important; }
 
-    /* BOTÕES DOS ÍCONES (RETANGULARES ARREDONDADOS - ESTILO IMAGEM 1) */
+    /* BOTÕES DOS ÍCONES (CÍRCULOS PERFEITOS) */
     button[kind="primary"] {
         background-color: #FF8C00 !important; border: 1px solid #FF8C00 !important;
         color: white !important; 
-        border-radius: 15px !important; /* Retângulo Arredondado */
+        border-radius: 50% !important; /* REDONDO */
         font-weight: bold !important; box-shadow: none !important;
-        width: auto !important; height: auto !important; padding: 10px 15px !important;
-        font-size: 28px !important; line-height: 1.1 !important;
+        width: 80px !important; height: 80px !important; 
+        font-size: 30px !important; line-height: 1 !important; padding: 0 !important;
     }
     
     button[kind="secondary"] {
-        border-radius: 15px !important; /* Retângulo Arredondado */
+        border-radius: 50% !important; /* REDONDO */
         background-color: white !important; 
         border: 2px solid #FF8C00 !important; 
         color: black !important;
-        padding: 10px 15px !important; margin: 0 auto !important; display: block !important;
-        line-height: 1.1 !important; box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
-        width: auto !important; height: auto !important; font-size: 28px !important;
+        width: 80px !important; height: 80px !important; 
+        font-size: 30px !important; line-height: 1 !important; padding: 0 !important;
     }
 
     /* GRID DE 3 COLUNAS */
     div[data-testid="stHorizontalBlock"] {
         display: grid !important; grid-template-columns: repeat(3, 1fr) !important;
-        gap: 10px !important; width: 100% !important; justify-items: center !important;
+        gap: 15px !important; width: 100% !important; justify-items: center !important;
     }
     div[data-testid="column"] {
         width: 100% !important; min-width: 0 !important; display: flex !important; flex-direction: column !important; align-items: center !important; padding: 0 !important;
@@ -204,13 +203,15 @@ def tela_termos():
     aceite = st.checkbox("Li os termos de uso, concordo e aceito.")
     if aceite:
         st.write("")
+        # Botão normal retangular para avançar (classe alterada para nao pegar estilo redondo)
+        st.markdown("""<style>div[data-testid="stButton"] button {width: 100%; border-radius: 10px !important; height: auto !important;}</style>""", unsafe_allow_html=True)
         if st.button("AVANÇAR", type="secondary"):
             st.session_state['aceitou_termos'] = True
             st.rerun()
 
 def formulario_cadastro_prestador():
     st.markdown("### 📝 Cadastro de Prestador")
-    st.info("Preencha todos os campos para ganhar destaque Ouro! 🥇")
+    st.info("Preencha todos os campos para se cadastrar.")
     
     # 1. Dados Pessoais
     nome_completo = st.text_input("Nome Completo (Obrigatório)")
@@ -221,32 +222,44 @@ def formulario_cadastro_prestador():
     categoria = st.selectbox("Sua Categoria", ["Eletricista", "Pedreiro", "Encanador", "Ar-Condicionado", "Gesseiro", "Vidraceiro", "Jardineiro", "Marmorista", "Serviços Gerais"])
     whats = st.text_input("WhatsApp de Trabalho (Com DDD)", placeholder="555599999999")
     
-    # 3. Avatar
-    st.markdown("**Escolha sua Foto/Avatar:**")
-    avatares = {
-        "Homem Capacete": "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
-        "Mulher Capacete": "https://cdn-icons-png.flaticon.com/512/3135/3135768.png",
-        "Homem Formal": "https://cdn-icons-png.flaticon.com/512/4128/4128176.png",
-        "Mulher Formal": "https://cdn-icons-png.flaticon.com/512/4128/4128244.png"
-    }
-    opcao_avatar = st.radio("Selecione:", list(avatares.keys()), horizontal=True)
-    foto_final = avatares[opcao_avatar]
+    # 3. Foto de Perfil (Lógica da Medalha)
+    st.markdown("**Foto de Perfil:**")
+    tipo_foto = st.radio("Como você quer aparecer?", ["Enviar Foto Real (Ganha Medalha de Ouro 🥇)", "Usar Avatar (Ganha Medalha de Prata 🥈)"])
     
+    foto_final = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png" # Padrão
+    medalhas_temp = []
+    
+    if "Enviar Foto Real" in tipo_foto:
+        uploaded_file = st.file_uploader("Envie sua foto ou tire uma selfie", type=['jpg', 'png', 'jpeg'])
+        if uploaded_file is not None:
+            # Em app real salvaríamos a foto. Aqui simulamos que ele enviou.
+            foto_final = "https://randomuser.me/api/portraits/men/99.jpg" # Simulação de foto real
+            medalhas_temp = ['🥇', '⚡']
+            st.success("Foto recebida! Você garantiu a Medalha de Ouro.")
+        else:
+            st.warning("Aguardando envio da foto para validar Medalha de Ouro.")
+    else:
+        st.warning("⚠️ Nota: Cadastros com Avatar recebem Medalha de Prata. Envie uma foto real para ganhar Ouro.")
+        medalhas_temp = ['🥈', '⚡']
+        avatares = {
+            "Homem Capacete": "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+            "Mulher Capacete": "https://cdn-icons-png.flaticon.com/512/3135/3135768.png"
+        }
+        opcao_avatar = st.selectbox("Escolha o Avatar:", list(avatares.keys()))
+        foto_final = avatares[opcao_avatar]
+
     # 4. Detalhes
     nota_fiscal = st.checkbox("Emito Nota Fiscal")
     descricao = st.text_area("Descreva seu trabalho e experiência (Máx 300 letras)", max_chars=300)
     
-    st.markdown("**Fotos de Trabalhos:**")
-    st.file_uploader("Envie fotos (Apenas simulação visual)", accept_multiple_files=True)
+    st.markdown("**Fotos de Trabalhos (Portfólio):**")
+    st.file_uploader("Envie fotos de obras realizadas", accept_multiple_files=True)
     st.caption("⚠️ Responsabilidade: Declaro ter autorização para divulgar as imagens dos serviços.")
     
     termos_resp = st.checkbox("Declaro que as informações são verdadeiras.")
     
     if st.button("CONCLUIR CADASTRO", type="primary"):
         if nome_completo and whats and nome_exibicao and termos_resp:
-            medalhas = []
-            if descricao and nota_fiscal:
-                medalhas = ['🥇', '⚡']
             
             novo_prestador = {
                 'Nome': nome_exibicao,
@@ -258,7 +271,7 @@ def formulario_cadastro_prestador():
                 'Nota': 5.0,
                 'Foto': foto_final,
                 'Agenda_Lista': [],
-                'Medalhas': medalhas
+                'Medalhas': medalhas_temp
             }
             
             novo_df = pd.DataFrame([novo_prestador])
@@ -268,7 +281,7 @@ def formulario_cadastro_prestador():
                 "nome": nome_exibicao,
                 "tipo": "Prestador de Serviços",
                 "whats": whats,
-                "medalhas": medalhas
+                "medalhas": medalhas_temp
             }
             st.success("Cadastro realizado com Sucesso! Bem-vindo.")
             st.rerun()
@@ -288,12 +301,16 @@ def tela_identificacao():
 
     st.markdown("### 👤 Quem é você?")
     
-    st.markdown("**Escolha seu Avatar (Cliente):**")
-    st.markdown("👨🏿 👩🏼 👴🏽 👱🏻‍♀️ 🧔🏻 👩🏾")
+    # CSS específico para restaurar botões normais nesta tela
+    st.markdown("""<style>div[data-testid="stButton"] button {width: 100%; border-radius: 10px !important; height: auto !important;}</style>""", unsafe_allow_html=True)
     
-    nome = st.text_input("Seu Nome")
+    col_av1, col_av2 = st.columns([1, 3])
+    with col_av1:
+        st.image("https://cdn-icons-png.flaticon.com/512/1077/1077114.png", width=50)
+    with col_av2:
+        nome = st.text_input("Seu Nome (Cliente)")
     
-    if st.button("Sou Cliente", type="primary"):
+    if st.button("Sou Cliente (Entrar)", type="primary"):
         st.session_state['usuario'] = {"nome": nome if nome else "Visitante", "tipo": "Cliente"}
         st.rerun()
             
@@ -304,7 +321,7 @@ def tela_identificacao():
         st.rerun()
     
     if st.button("Já tenho cadastro (Entrar)", type="secondary"):
-        st.session_state['usuario'] = {"nome": nome if nome else "Prestador", "tipo": "Prestador de Serviços"}
+        st.session_state['usuario'] = {"nome": "Prestador", "tipo": "Prestador de Serviços"}
         st.rerun()
 
 def html_ofertas():
@@ -323,6 +340,7 @@ def html_ofertas():
 
 def html_parceiros_dinamico():
     html_content = ""
+    # PARCEIROS (MP4, GIF ou JPG)
     for i in range(1, 6):
         nome_base = f"parceiro{i}"
         if os.path.exists(f"{nome_base}.mp4"):
@@ -460,12 +478,12 @@ def app_principal():
             if st.form_submit_button("Publicar", type="secondary"):
                 st.success("Publicado!")
         st.divider()
-        # MURAL COM AVATARES (FOTOS)
+        # MURAL COM FOTOS REALISTAS
         for post in st.session_state['mural_posts']:
             st.markdown(f"""
             <div class="post-mural" style="margin-bottom: 15px; padding: 10px; background-color: #f8f9fa; border-radius: 10px; border: 1px solid #eee;">
                 <div class="post-header" style="display: flex; align-items: center; margin-bottom: 5px; font-weight: bold; color: #FF8C00;">
-                    <img src="{post['avatar']}" style="width: 35px; height: 35px; border-radius: 50%; margin-right: 10px; border: 1px solid #ccc;">
+                    <img src="{post['avatar']}" style="width: 35px; height: 35px; border-radius: 50%; margin-right: 10px; border: 1px solid #ccc; object-fit: cover;">
                     {post['autor']}
                 </div>
                 <div class="post-texto" style="font-size: 14px; color: #333; padding-left: 45px;">{post['texto']}</div>
@@ -484,9 +502,16 @@ def app_principal():
         
         if usuario['tipo'] == 'Prestador de Serviços':
             st.divider()
+            
+            # MOSTRA A MEDALHA ATUAL DO PRESTADOR
+            medalhas_usr = usuario.get('medalhas', [])
+            if '🥇' in medalhas_usr:
+                st.success("🏆 Você possui Medalha de Ouro! (Foto Real validada)")
+            elif '🥈' in medalhas_usr:
+                st.warning("🥈 Você possui Medalha de Prata (Avatar). Envie uma foto real para ganhar Ouro.")
+                
             ativo = st.toggle("Ativo para Trabalho", value=True)
             if not ativo: st.warning("Você está invisível nas buscas.")
-            else: st.success("Você está visível para clientes.")
             
         opcoes = st.selectbox("Gerenciar", ["Meus Dados", "Sair"])
         if opcoes == "Meus Dados":
