@@ -57,34 +57,22 @@ def html_parceiros_dinamico():
     return f"""<div class="ofertas-container" style="justify-content: center;">{html_content}</div>"""
 
 def gerar_dados_ficticios_massivos():
-    """Gera 10 profissionais por categoria com CORREÇÃO DE GÊNERO NA FOTO"""
+    """Gera 10 profissionais para TODAS as categorias"""
+    # LISTA EXATA DOS BOTÕES
     categorias = [
         "Eletricista", "Pedreiro(a)", "Encanador(a)", "Ar-Condicionado", 
         "Gesseiro(a)", "Vidraceiro(a)", "Jardineiro(a)", "Marmorista", "Serviços Gerais"
     ]
-    
-    nomes_homens = ["Carlos", "João", "Roberto", "Paulo", "Marcos", "José", "Luiz", "Pedro", "Lucas", "Rafael", "Bruno", "Diego", "Felipe", "Anderson"]
-    nomes_mulheres = ["Ana", "Maria", "Fernanda", "Juliana", "Carla", "Amanda", "Sonia", "Patrícia", "Camila", "Larissa", "Beatriz", "Mariana"]
-    sobrenomes = ["Silva", "Santos", "Oliveira", "Souza", "Lima", "Ferreira", "Costa", "Pereira", "Almeida", "Nascimento", "Rodrigues", "Gomes"]
-    
+    nomes_base = ["Carlos", "João", "Roberto", "Paulo", "Marcos", "José", "Luiz", "Ana", "Maria", "Pedro", "Lucas", "Fernanda", "Rafael", "Bruno"]
+    sobrenomes = ["Silva", "Santos", "Oliveira", "Souza", "Lima", "Ferreira", "Costa", "Pereira", "Almeida", "Nascimento"]
     data = []
     
     for cat in categorias:
-        for i in range(10): # 10 por categoria
-            # Decide gênero aleatoriamente (70% homem, 30% mulher para construção civil, ex)
-            genero = 'men' if random.random() < 0.8 else 'women'
-            
-            if genero == 'men':
-                nome_proprio = random.choice(nomes_homens)
-            else:
-                nome_proprio = random.choice(nomes_mulheres)
-                
-            nome_completo = f"{nome_proprio} {random.choice(sobrenomes)}"
-            
-            # Alterna entre Foto Real (Ouro) e Avatar (Prata)
+        for i in range(10): # Garante 10 por categoria
+            nome_completo = f"{random.choice(nomes_base)} {random.choice(sobrenomes)}"
+            # Gênero da foto
             if i % 2 == 0:
-                # Foto real correspondente ao gênero
-                foto = f"https://randomuser.me/api/portraits/{genero}/{random.randint(1,99)}.jpg"
+                foto = f"https://randomuser.me/api/portraits/{'women' if i%3==0 else 'men'}/{random.randint(1,99)}.jpg"
                 nf = True
             else:
                 foto = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
@@ -92,13 +80,12 @@ def gerar_dados_ficticios_massivos():
             
             item = {
                 'Nome': nome_completo, 'Categoria': cat, 'Whatsapp': '555599999999',
-                'Latitude': -28.6590 + (random.uniform(-0.015, 0.015)), # Espalha um pouco mais
+                'Latitude': -28.6590 + (random.uniform(-0.015, 0.015)),
                 'Longitude': -56.0020 + (random.uniform(-0.015, 0.015)),
                 'Status': 'Disponível', 'Nota': round(random.uniform(4.5, 5.0), 1),
                 'Foto': foto, 'Agenda_Lista': [], 'NF': nf
             }
             data.append(item)
-            
     df = pd.DataFrame(data)
     df['Medalhas'] = df.apply(definir_medalhas, axis=1)
     return df
@@ -120,12 +107,10 @@ def carregar_dados_planilha():
                 v = float(valor)
                 if abs(v) > 90: return v / 10 
                 return v
-            except:
-                return -28.6592 
+            except: return -28.6592 
         
         df['Latitude'] = df['Latitude'].apply(corrigir_lat_long)
         df['Longitude'] = pd.to_numeric(df['Longitude'], errors='coerce')
-        
         if 'NF' not in df.columns: df['NF'] = False
         else: df['NF'] = df['NF'].astype(bool)
         
@@ -143,21 +128,18 @@ def inicializar_session_state():
     if 'aceitou_termos' not in st.session_state: st.session_state['aceitou_termos'] = False
     if 'mural_posts' not in st.session_state:
         comentarios = [
-            ("Ana Silva", "women/44.jpg", "Alguém indica um eletricista urgente para o bairro Centro?"),
-            ("Marcos Oliveira", "men/32.jpg", "Sobraram 2 sacos de cimento. Vendo barato. Whatsapp: 55 99..."),
-            ("Clara Souza", "women/68.jpg", "Preciso de frete para geladeira. Entre em contato comigo!"),
-            ("Roberto Santos", "men/85.jpg", "Procuro pedreiro(a) para reforma. Orçamento sem compromisso."),
-            ("Luciana Ferreira", "women/12.jpg", "Alguém conhece jardineiro(a) para poda? Entre em contato."),
+            ("Ana Silva", "women/44.jpg", "Alguém indica um eletricista urgente?"),
+            ("Marcos Oliveira", "men/32.jpg", "Sobraram 2 sacos de cimento. Whatsapp: 55 99..."),
+            ("Clara Souza", "women/68.jpg", "Preciso de frete para geladeira."),
+            ("Roberto Santos", "men/85.jpg", "Procuro pedreiro(a) para reforma."),
+            ("Luciana Ferreira", "women/12.jpg", "Alguém conhece jardineiro(a)?"),
             ("Ricardo Gomes", "men/11.jpg", "Instalador de ar condicionado para sábado?"),
-            ("Fernanda Lima", "women/90.jpg", "Quem faz limpeza de caixa d'água? Preciso urgente."),
-            ("Paulo Ricardo", "men/45.jpg", "Preciso de vidraceiro(a). Entre em contato comigo no privado."),
-            ("Juliana Costa", "women/22.jpg", "Procuro diarista para pós-obra. Pago bem."),
-            ("Bruno Alves", "men/55.jpg", "Vendo restos de piso porcelanato. Entre em contato."),
-            ("Carla Dias", "women/33.jpg", "Indicação de encanador(a) para vazamento oculto?"),
-            ("Felipe Neto", "men/66.jpg", "Preciso de eletricista para instalar chuveiro."),
-            ("Amanda Luz", "women/15.jpg", "Alguém sabe quem faz frete de sofá? Entre em contato comigo."),
-            ("Diego Show", "men/10.jpg", "Marmorista disponível para balcão de cozinha?"),
-            ("Sonia Abrão", "women/70.jpg", "Preciso de marido de aluguel para pendurar quadros.")
+            ("Fernanda Lima", "women/90.jpg", "Quem faz limpeza de caixa d'água?"),
+            ("Paulo Ricardo", "men/45.jpg", "Preciso de vidraceiro(a)."),
+            ("Juliana Costa", "women/22.jpg", "Procuro diarista para pós-obra."),
+            ("Bruno Alves", "men/55.jpg", "Vendo restos de piso porcelanato."),
+            ("Carla Dias", "women/33.jpg", "Indicação de encanador(a)?"),
+            ("Felipe Neto", "men/66.jpg", "Preciso de eletricista para chuveiro.")
         ]
         posts = []
         for i, (nome, img, texto) in enumerate(comentarios):
@@ -168,21 +150,38 @@ def inicializar_session_state():
 
 inicializar_session_state()
 
-# --- 3. ESTILO VISUAL (CSS V63.0) ---
+# --- 3. ESTILO VISUAL (CSS V64.0 - CORREÇÕES DE CORES E INPUTS) ---
 st.markdown("""
     <style>
     :root { color-scheme: light; }
     .stApp { background-color: #ffffff; color: #000000; }
     .block-container { padding: 1rem; padding-bottom: 5rem; }
 
-    .stTextArea textarea, .stTextInput input, .stSelectbox div[data-baseweb="select"] {
+    /* CORREÇÃO DO CAMPO DE BUSCA PRETO */
+    /* Força fundo branco e texto preto nos inputs e selects */
+    .stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"] {
         background-color: #f8f9fa !important;
         color: #000000 !important;
-        -webkit-text-fill-color: #000000 !important;
+        -webkit-text-fill-color: #000000 !important; /* Importante para Safari/Mobile */
         border: 1px solid #ced4da !important;
         border-radius: 8px !important;
     }
-    div[data-baseweb="input"] { background-color: #f8f9fa !important; }
+    
+    /* Corrige o menu suspenso do selectbox */
+    div[data-baseweb="select"] > div {
+        background-color: #f8f9fa !important;
+        color: #000000 !important;
+    }
+    div[data-baseweb="menu"] {
+        background-color: #ffffff !important;
+    }
+    div[data-baseweb="option"] {
+        color: #000000 !important;
+    }
+    /* Texto selecionado dentro do box */
+    div[data-baseweb="select"] span {
+        color: #000000 !important;
+    }
 
     div[data-baseweb="tab-list"] { display: flex; width: 100%; gap: 2px; }
     button[data-baseweb="tab"] {
@@ -237,7 +236,7 @@ def tela_termos():
     if os.path.exists("logo.png"): st.image("logo.png", use_container_width=True)
     else: st.header("⚡ Iluminar Conecta")
     st.markdown("##### 📜 Termos de Uso")
-    texto_termos = """1. AVISO IMPORTANTE: Este é um aplicativo de teste da Iluminar.\n2. RESPONSABILIDADE: A empresa não se responsabiliza pelos serviços contratados diretamente com os prestadores.\n3. DADOS: Seus dados serão usados apenas para contato dentro do app.\n4. SEGURANÇA: Não compartilhe senhas financeiras."""
+    texto_termos = """1. AVISO IMPORTANTE: Este é um aplicativo de teste da Iluminar.\n2. RESPONSABILIDADE: A empresa não se responsabiliza pelos serviços contratados.\n3. DADOS: Seus dados serão usados apenas para contato dentro do app.\n4. SEGURANÇA: Não compartilhe senhas financeiras."""
     st.markdown(f"""<div class="box-termos">{texto_termos.replace(chr(10), "<br>")}</div>""", unsafe_allow_html=True)
     st.markdown(criar_link_download(texto_termos, "termos_uso.txt"), unsafe_allow_html=True)
     st.write("")
@@ -255,7 +254,6 @@ def formulario_cadastro_prestador():
     nome_exibicao = st.text_input("Nome no App (Ex: João Eletricista)")
     categoria = st.selectbox("Sua Categoria", ["Eletricista", "Pedreiro(a)", "Encanador(a)", "Ar-Condicionado", "Gesseiro(a)", "Vidraceiro(a)", "Jardineiro(a)", "Marmorista", "Serviços Gerais"])
     whats = st.text_input("WhatsApp (Com DDD)")
-    
     st.markdown("**Foto de Perfil:**")
     tipo_foto = st.radio("Foto:", ["Enviar Foto Real (Ganha Ouro 🥇)", "Usar Avatar (Ganha Prata 🥈)"])
     foto_final = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
@@ -270,7 +268,6 @@ def formulario_cadastro_prestador():
     else:
         st.warning("Avatar selecionado (Medalha de Prata).")
         medalhas_temp = ['🥈']
-        
     nf = st.checkbox("Emito NF")
     if st.button("CONCLUIR CADASTRO", type="primary"):
         if nome_completo and whats:
@@ -288,14 +285,12 @@ def tela_identificacao():
     if 'tela_cadastro' in st.session_state and st.session_state['tela_cadastro']:
         formulario_cadastro_prestador()
         return
-
     st.markdown("### 👤 Quem é você?")
     st.markdown("##### Para Clientes")
     nome = st.text_input("Seu Nome")
     up = st.file_uploader("Foto (Opcional)", type=['jpg', 'png'])
     if up: st.caption("Nota: Foto simulada para teste.")
     avatar = "https://randomuser.me/api/portraits/women/88.jpg" if up else "https://cdn-icons-png.flaticon.com/512/1077/1077114.png"
-
     if st.button("Sou Cliente (Entrar)", type="primary"):
         st.session_state['usuario'] = {"nome": nome if nome else "Visitante", "tipo": "Cliente", "foto": avatar}
         st.rerun()
@@ -371,7 +366,8 @@ def app_principal():
             df = st.session_state['prestadores']
             filtro = st.session_state['filtro']
             if 'Categoria' in df.columns:
-                df_filtrado = df[df['Categoria'].astype(str).str.contains(filtro, case=False, na=False)]
+                # CORREÇÃO: REGEX=FALSE PERMITE BUSCAR PARENTESES
+                df_filtrado = df[df['Categoria'].astype(str).str.contains(filtro, case=False, regex=False, na=False)]
             else: df_filtrado = pd.DataFrame()
 
             st.write(f"Encontrados: **{len(df_filtrado)} profissionais**")
@@ -398,17 +394,12 @@ def app_principal():
 
     with aba2:
         st.info("📍 Mapa - Prestadores")
-        
-        # --- FILTRO DENTRO DO MAPA ---
-        # Se veio com filtro da home, usa ele. Se não, permite escolher.
         opcoes_filtro = ["Todos", "Eletricista", "Pedreiro(a)", "Encanador(a)", "Ar-Condicionado", "Gesseiro(a)", "Vidraceiro(a)", "Jardineiro(a)", "Marmorista", "Serviços Gerais"]
         
-        # Lógica para definir o índice padrão do selectbox
         index_padrao = 0
         if st.session_state.get('filtro'):
-            # Tenta achar o filtro atual na lista
             for idx, op in enumerate(opcoes_filtro):
-                if st.session_state['filtro'] in op:
+                if st.session_state['filtro'] == op:
                     index_padrao = idx
                     break
         
@@ -418,9 +409,9 @@ def app_principal():
         df_mapa = st.session_state['prestadores']
         df_mapa = df_mapa[pd.to_numeric(df_mapa['Latitude'], errors='coerce').notnull()]
         
-        # Aplica o filtro selecionado NO MAPA
         if filtro_mapa != "Todos":
-            df_mapa = df_mapa[df_mapa['Categoria'].astype(str).str.contains(filtro_mapa, case=False, na=False)]
+            # CORREÇÃO: REGEX=FALSE TAMBÉM NO MAPA
+            df_mapa = df_mapa[df_mapa['Categoria'].astype(str).str.contains(filtro_mapa, case=False, regex=False, na=False)]
 
         icones_mapa = {
             "Eletricista": "bolt", "Pedreiro(a)": "gavel", "Encanador(a)": "tint",
@@ -434,11 +425,7 @@ def app_principal():
                 if chave in row['Categoria']:
                     icone_nome = valor
                     break
-            folium.Marker(
-                [row['Latitude'], row['Longitude']], 
-                popup=row['Nome'], 
-                icon=folium.Icon(color='orange', icon=icone_nome, prefix='fa')
-            ).add_to(m)
+            folium.Marker([row['Latitude'], row['Longitude']], popup=row['Nome'], icon=folium.Icon(color='orange', icon=icone_nome, prefix='fa')).add_to(m)
         st_folium(m, width=700, height=400)
 
     with aba3:
